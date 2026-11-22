@@ -5,7 +5,8 @@ plugins {
 
 android {
     namespace = "dev.browsery.app"
-    compileSdk = 36
+    // Dependency Compose 1.12.x mensyaratkan compile terhadap API 37. targetSdk tetap 36.
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "dev.browsery.app"
