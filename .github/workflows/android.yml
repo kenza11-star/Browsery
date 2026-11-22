@@ -59,15 +59,17 @@ jobs:
           set -o pipefail
           gradle :app:lintDebug --stacktrace 2>&1 | tee "$RUNNER_TEMP/lint.log"
 
-      # Ringkasan error sebagai annotation agar terbaca lewat API check-run.
+      # Ringkasan error sebagai annotation (satu baris per annotation) agar terbaca lewat API check-run.
       - name: Summarize failures
         if: failure()
         run: |
           for f in unit assemble lint; do
             log="$RUNNER_TEMP/$f.log"
             [ -f "$log" ] || continue
-            msg=$(grep -E "^e: |error:|Error:|FAILED|What went wrong|Execution failed|Unresolved|Could not|\.kt:[0-9]+|\.xml:[0-9]+|Lint found|Error \[|Warning \[" "$log" | grep -v "^\s*at " | head -25 | cut -c1-300 | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
-            [ -n "$msg" ] && echo "::error title=log-$f::$msg"
+            { sed -n '/What went wrong/,/\* Try/p' "$log" | head -14; grep -E "^e: |^w: .*\.kt|Error:|error:" "$log" | head -12; } \
+              | cut -c1-400 | tr -d '\r' | sed 's/%/%25/g' | while IFS= read -r line; do
+                [ -n "$line" ] && echo "::error title=$f::$line"
+              done
           done
           exit 0
 
