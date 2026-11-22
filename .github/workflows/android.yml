@@ -30,7 +30,6 @@ jobs:
       # Runner ubuntu-latest sudah membawa Android SDK (ANDROID_HOME). Cukup terima lisensi.
       - name: Accept Android SDK licenses
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: Setup Gradle 9.3.1
@@ -38,14 +37,15 @@ jobs:
         with:
           gradle-version: "9.3.1"
 
-      - name: Lint
-        run: gradle :app:lintDebug --stacktrace
-
       - name: Unit test
-        run: gradle :app:testDebugUnitTest --stacktrace
+        run: |
+          set -o pipefail
+          gradle :app:testDebugUnitTest --stacktrace 2>&1 | tee "$RUNNER_TEMP/unit.log"
 
       - name: Assemble debug APK
-        run: gradle :app:assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          gradle :app:assembleDebug --stacktrace 2>&1 | tee "$RUNNER_TEMP/assemble.log"
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
@@ -53,6 +53,23 @@ jobs:
           name: browsery-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      - name: Lint
+        run: |
+          set -o pipefail
+          gradle :app:lintDebug --stacktrace 2>&1 | tee "$RUNNER_TEMP/lint.log"
+
+      # Ringkasan error sebagai annotation agar terbaca lewat API check-run.
+      - name: Summarize failures
+        if: failure()
+        run: |
+          for f in unit assemble lint; do
+            log="$RUNNER_TEMP/$f.log"
+            [ -f "$log" ] || continue
+            msg=$(grep -E "^e: |error:|Error:|FAILED|What went wrong|Execution failed|Unresolved|Could not|\.kt:[0-9]+|\.xml:[0-9]+|Lint found|Error \[|Warning \[" "$log" | grep -v "^\s*at " | head -25 | cut -c1-300 | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
+            [ -n "$msg" ] && echo "::error title=log-$f::$msg"
+          done
+          exit 0
 
       - name: Upload reports
         if: failure()
