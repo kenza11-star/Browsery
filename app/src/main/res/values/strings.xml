@@ -27,4 +27,47 @@
     <string name="err_security_detail">Sertifikat keamanan situs tidak valid. Browsery tidak melewati peringatan ini secara otomatis.</string>
     <string name="err_generic_title">Halaman tidak dapat dimuat</string>
     <string name="err_generic_detail">Terjadi kesalahan saat memuat halaman. Coba lagi nanti.</string>
+
+    <string name="menu_more">Menu lainnya</string>
+    <string name="menu_new_tab">Tab baru</string>
+    <string name="menu_new_private">Tab privat baru</string>
+    <string name="menu_bookmark_add">Tambah bookmark</string>
+    <string name="menu_bookmark_remove">Hapus bookmark</string>
+    <string name="menu_bookmarks">Bookmark</string>
+    <string name="menu_history">Riwayat</string>
+    <string name="menu_share">Bagikan halaman</string>
+    <string name="menu_downloads">Unduhan (tersedia di Stage 5)</string>
+    <string name="menu_find">Cari di halaman (tersedia di Stage 11)</string>
+    <string name="menu_desktop">Situs desktop (tersedia di Stage 11)</string>
+    <string name="menu_settings">Pengaturan (tersedia di Stage 6)</string>
+
+    <string name="tabs_title">Tab</string>
+    <string name="tabs_count_desc">Tab terbuka: %1$d. Buka daftar tab</string>
+    <string name="tabs_reopen">Buka lagi tab yang ditutup</string>
+    <string name="close_tab">Tutup tab</string>
+    <string name="move_earlier">Geser ke kiri</string>
+    <string name="move_later">Geser ke kanan</string>
+    <string name="private_label">Privat</string>
+    <string name="new_tab_title">Tab baru</string>
+
+    <string name="home_title">Browsery</string>
+    <string name="home_shortcuts">Pintasan</string>
+    <string name="shortcut_add">Tambah pintasan</string>
+    <string name="shortcut_edit">Ubah pintasan</string>
+    <string name="field_title">Nama</string>
+    <string name="field_url">Alamat</string>
+    <string name="invalid_url">Alamat tidak valid</string>
+    <string name="save">Simpan</string>
+    <string name="cancel">Batal</string>
+    <string name="delete">Hapus</string>
+    <string name="delete_all">Hapus semua</string>
+
+    <string name="bookmarks_title">Bookmark</string>
+    <string name="history_title">Riwayat</string>
+    <string name="search_hint">Cari</string>
+    <string name="empty_bookmarks">Belum ada bookmark. Buka halaman web lalu pilih Menu &gt; Tambah bookmark.</string>
+    <string name="empty_history">Belum ada riwayat. Halaman di tab privat tidak pernah dicatat.</string>
+    <string name="empty_search">Tidak ada hasil.</string>
+    <string name="confirm_clear_bookmarks">Hapus semua bookmark? Tindakan ini tidak dapat dibatalkan.</string>
+    <string name="confirm_clear_history">Hapus seluruh riwayat penelusuran? Tindakan ini tidak dapat dibatalkan.</string>
 </resources>

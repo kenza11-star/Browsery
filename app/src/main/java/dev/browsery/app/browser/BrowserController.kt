@@ -12,11 +12,13 @@ import dev.browsery.app.engine.GeckoRuntimeProvider
 import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
+import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.WebRequestError
 
 data class BrowserState(
     val url: String = "",
     val title: String = "",
+    val started: Boolean = false,
     val canGoBack: Boolean = false,
     val canGoForward: Boolean = false,
     val isLoading: Boolean = false,
@@ -30,21 +32,32 @@ data class BrowserState(
         get() = if (url == UrlUtils.BLANK || url.startsWith("data:")) "" else url
 
     val isHttp: Boolean get() = url.startsWith("http://", ignoreCase = true)
+
+    val isWebUrl: Boolean
+        get() = url.startsWith("http://", ignoreCase = true) || url.startsWith("https://", ignoreCase = true)
 }
 
 /**
- * Pemilik satu GeckoSession (satu tab pada Stage 2). State UI dipisahkan dari engine:
- * Compose hanya membaca [state]; rotasi/recomposition tidak membuat ulang session.
+ * Pemilik satu GeckoSession (satu tab). State UI dipisahkan dari engine: Compose hanya membaca
+ * [state]; rotasi/recomposition tidak membuat ulang session.
  */
-class BrowserController(context: Context) {
+class BrowserController(context: Context, val isPrivate: Boolean = false) {
     private val appContext = context.applicationContext
 
-    val session = GeckoSession()
+    val session = GeckoSession(
+        GeckoSessionSettings.Builder().usePrivateMode(isPrivate).build(),
+    )
 
     var state by mutableStateOf(BrowserState())
         private set
 
     var onFullScreenChange: ((Boolean) -> Unit)? = null
+
+    /** Dipanggil saat lokasi/judul berubah (untuk menyimpan sesi). */
+    var onChanged: (() -> Unit)? = null
+
+    /** Dipanggil saat halaman web selesai dimuat dengan sukses (untuk riwayat; TabManager memfilter privat). */
+    var onPageLoaded: ((url: String, title: String) -> Unit)? = null
 
     private var failedUrl: String? = null
     private var lastUrl: String = UrlUtils.BLANK
@@ -60,7 +73,8 @@ class BrowserController(context: Context) {
             val failed = failedUrl
             val shown = if (url != null && url.startsWith("data:text/html") && failed != null) failed else (url ?: "")
             if (!shown.startsWith("data:")) lastUrl = shown
-            state = state.copy(url = shown, message = null)
+            state = state.copy(url = shown, message = null, started = true)
+            onChanged?.invoke()
         }
 
         override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) {
@@ -87,7 +101,7 @@ class BrowserController(context: Context) {
                     state = state.copy(message = appContext.getString(R.string.msg_invalid_input))
                     GeckoResult.fromValue(AllowOrDeny.DENY)
                 }
-                // Popup / window.open: dibuka di tab saat ini (multi-tab datang di Stage 4).
+                // Popup / window.open: dibuka di tab saat ini.
                 request.target == GeckoSession.NavigationDelegate.TARGET_WINDOW_NEW &&
                     (scheme == "http" || scheme == "https") -> {
                     session.loadUri(uri)
@@ -117,6 +131,8 @@ class BrowserController(context: Context) {
         override fun onPageStop(session: GeckoSession, success: Boolean) {
             if (success) recoverCount = 0
             state = state.copy(isLoading = false, progress = if (success) 100 else state.progress)
+            val s = state
+            if (success && s.isWebUrl) onPageLoaded?.invoke(s.url, s.title)
         }
 
         override fun onProgressChange(session: GeckoSession, progress: Int) {
@@ -134,6 +150,7 @@ class BrowserController(context: Context) {
     private val contentDelegate = object : GeckoSession.ContentDelegate {
         override fun onTitleChange(session: GeckoSession, title: String?) {
             state = state.copy(title = title ?: "")
+            onChanged?.invoke()
         }
 
         override fun onFullScreen(session: GeckoSession, fullScreen: Boolean) {
@@ -152,11 +169,10 @@ class BrowserController(context: Context) {
         session.contentDelegate = contentDelegate
     }
 
-    /** Membuka session (sekali) dan memuat halaman kosong. */
+    /** Membuka session (sekali). Tidak memuat apa pun. */
     fun attach() {
         if (!session.isOpen) {
             session.open(GeckoRuntimeProvider.get(appContext))
-            session.loadUri(UrlUtils.BLANK)
         }
     }
 
@@ -171,7 +187,8 @@ class BrowserController(context: Context) {
         }
     }
 
-    fun loadExternalWebUrl(url: String) = submit(url)
+    /** Memuat URL yang sudah tervalidasi (restore sesi). */
+    fun loadUrl(url: String) = load(url)
 
     fun goBack() = session.goBack()
 
@@ -197,13 +214,15 @@ class BrowserController(context: Context) {
 
     fun close() {
         onFullScreenChange = null
+        onChanged = null
+        onPageLoaded = null
         if (session.isOpen) session.close()
     }
 
     private fun load(url: String) {
         failedUrl = null
         lastUrl = url
-        state = state.copy(message = null)
+        state = state.copy(message = null, started = true)
         session.loadUri(url)
     }
 

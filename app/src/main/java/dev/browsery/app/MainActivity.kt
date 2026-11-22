@@ -8,24 +8,28 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import dev.browsery.app.browser.BrowserController
-import dev.browsery.app.ui.BrowserScreen
+import dev.browsery.app.browser.TabManager
+import dev.browsery.app.data.AppDatabase
+import dev.browsery.app.ui.AppRoot
 import dev.browsery.app.ui.BrowseryTheme
 
 class MainActivity : ComponentActivity() {
-    private lateinit var controller: BrowserController
+    private lateinit var tabs: TabManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        controller = BrowserController(applicationContext).also { it.attach() }
-        controller.onFullScreenChange = ::applyFullScreen
+        val db = AppDatabase.get(applicationContext)
+        tabs = TabManager(applicationContext, db)
+        tabs.onFullScreenChange = ::applyFullScreen
+        tabs.start()
         setContent {
             BrowseryTheme {
-                BrowserScreen(controller)
+                AppRoot(tabs, db)
             }
         }
-        handleIntent(intent)
+        // Hindari membuka ulang tautan yang sama saat Activity dibuat ulang.
+        if (savedInstanceState == null) handleIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -35,7 +39,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        controller.close()
+        tabs.onFullScreenChange = null
+        tabs.closeAll()
         super.onDestroy()
     }
 
@@ -45,7 +50,7 @@ class MainActivity : ComponentActivity() {
         val data = intent.data ?: return
         val scheme = data.scheme?.lowercase()
         if (scheme == "http" || scheme == "https") {
-            controller.loadExternalWebUrl(data.toString())
+            tabs.openExternal(data.toString())
         }
     }
 
