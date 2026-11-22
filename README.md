@@ -1,8 +1,8 @@
 # Browsery
 
-Browser Android pribadi berbasis GeckoView, Kotlin, dan Jetpack Compose. Proyek dikerjakan bertahap (Stage 1-14), lihat `docs/STAGES.md`.
+Browser Android pribadi berbasis GeckoView, Kotlin, dan Jetpack Compose. Dikerjakan bertahap (Stage 1-14), lihat `docs/STAGES.md` untuk status jujur tiap tahap.
 
-**Status:** Stage 1 (fondasi). Belum ada navigasi, address bar, atau tab.
+**Status:** Stage 2 (navigasi dasar) diimplementasikan tetapi belum terverifikasi di perangkat/CI. Belum ada tab, beranda, download manager, pengaturan, atau sinkronisasi di sisi aplikasi.
 
 ## Build
 
@@ -13,8 +13,9 @@ Repo ini belum menyertakan Gradle wrapper (file biner `gradle-wrapper.jar` tidak
 ## Catatan teknis
 
 - minSdk 26, targetSdk/compileSdk 36. Pilihan minSdk belum diuji di perangkat nyata.
-- Stage 1 hanya arm64-v8a. Perangkat 32-bit dan emulator x86_64 belum didukung.
+- Hanya arm64-v8a. Perangkat 32-bit dan emulator x86_64 belum didukung.
 - GeckoView: `org.mozilla.geckoview:geckoview-arm64-v8a:159.0.20261102144711` dari `maven.mozilla.org`.
 - Tidak ada secret di repo. Signing release baru dibuat di Stage 13.
+- Backend Supabase (skema sync + RLS): `supabase/migrations/` dan `docs/SETUP_SUPABASE.md`.
 
 Lihat `docs/ARCHITECTURE.md` untuk arsitektur dan peta jalan lintas platform.

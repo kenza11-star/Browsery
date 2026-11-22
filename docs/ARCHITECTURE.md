@@ -3,29 +3,30 @@
 ## Prinsip
 
 - Android dulu. Desktop (Windows/macOS/Linux) dan iOS adalah target terpisah di peta jalan, bukan hasil otomatis dari APK ini.
-- Satu modul Gradle (`app`) pada Stage 1. Dipecah bila ada alasan nyata (download, sync).
+- Satu modul Gradle (`app`). Dipecah bila ada alasan nyata (download, sync).
 - Browsing harus tetap jalan tanpa akun dan tanpa Supabase.
 
-## Alur aplikasi (Stage 1)
+## Alur aplikasi (Stage 2)
 
 ```
-MainActivity (Compose)
-  -> BrowseryTheme (light/dark)
-  -> BrowseryRoot
-       -> teks status
-       -> GeckoHost (AndroidView)
-            -> GeckoSession.open(GeckoRuntimeProvider.get())
-            -> loadUri("about:blank")
+MainActivity
+  -> BrowserController (pemilik GeckoSession + state Compose)
+  -> BrowseryTheme -> BrowserScreen
+       -> AddressBar (back, forward, field alamat, reload/stop)
+       -> progress bar, MessageBar
+       -> GeckoHost (AndroidView -> GeckoView.setSession)
 ```
 
-`GeckoRuntime` dibuat sekali per proses (`GeckoRuntimeProvider`). `GeckoSession` dibuat per layar dan ditutup saat composable dibuang.
+- `GeckoRuntimeProvider`: satu `GeckoRuntime` per proses.
+- `BrowserController`: memiliki `GeckoSession`, mengimplementasikan Navigation/Progress/Content delegate, dan mengekspos `BrowserState` (url, judul, canGoBack/Forward, progress, secure, fullscreen, pesan). Session tidak ditutup oleh composable, jadi rotasi/recomposition tidak memuat ulang halaman. Session ditutup saat Activity dihancurkan.
+- `UrlUtils`: logika murni (tanpa Android) untuk normalisasi input, URL pencarian ter-encode, penolakan skema berbahaya (`javascript:`, `file:`, `data:`, `intent:`, dll). Diuji di `UrlUtilsTest`.
+- Halaman error: `onLoadError` mengembalikan data URI dengan pesan Indonesia. Kesalahan sertifikat TIDAK dilewati.
+- Intent: `tel:`/`mailto:`/`sms:` dibuka lewat aplikasi lain; popup `window.open` dimuat di tab saat ini; intent VIEW http/https dari aplikasi lain diterima.
 
-## Struktur
+## Backend (Supabase)
 
-- `app/src/main/java/dev/browsery/app/MainActivity.kt`: entry point.
-- `.../engine/`: integrasi GeckoView.
-- `.../ui/`: tema.
+Skema sinkronisasi ada di `supabase/migrations/` dan dijelaskan di `docs/SETUP_SUPABASE.md`. Klien Android belum memakainya.
 
 ## Peta jalan
 
-Stage 2 menambah navigasi sungguhan (address bar, tab, state). Lihat `docs/STAGES.md`.
+Stage 3 menambah UI Chrome-like dan beranda; Stage 4 tab, history, bookmarks. Lihat `docs/STAGES.md`.
