@@ -1,50 +1,61 @@
 package dev.browsery.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import dev.browsery.app.engine.GeckoHost
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import dev.browsery.app.browser.BrowserController
+import dev.browsery.app.ui.BrowserScreen
 import dev.browsery.app.ui.BrowseryTheme
 
 class MainActivity : ComponentActivity() {
+    private lateinit var controller: BrowserController
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        controller = BrowserController(applicationContext).also { it.attach() }
+        controller.onFullScreenChange = ::applyFullScreen
         setContent {
             BrowseryTheme {
-                BrowseryRoot()
+                BrowserScreen(controller)
             }
         }
+        handleIntent(intent)
     }
-}
 
-@Composable
-fun BrowseryRoot() {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
-    ) {
-        Column(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
-            Text(
-                text = stringResource(R.string.stage1_status),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-            )
-            GeckoHost(modifier = Modifier.fillMaxWidth().weight(1f))
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    override fun onDestroy() {
+        controller.close()
+        super.onDestroy()
+    }
+
+    /** Hanya tautan http/https dari intent VIEW yang diterima; skema lain diabaikan. */
+    private fun handleIntent(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_VIEW) return
+        val data = intent.data ?: return
+        val scheme = data.scheme?.lowercase()
+        if (scheme == "http" || scheme == "https") {
+            controller.loadExternalWebUrl(data.toString())
+        }
+    }
+
+    private fun applyFullScreen(fullScreen: Boolean) {
+        val insets = WindowCompat.getInsetsController(window, window.decorView)
+        if (fullScreen) {
+            insets.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            insets.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            insets.show(WindowInsetsCompat.Type.systemBars())
         }
     }
 }

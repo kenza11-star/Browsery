@@ -1,5 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Browsery</string>
-    <string name="stage1_status">Stage 1: fondasi aplikasi. GeckoView terpasang dan membuka halaman kosong. Navigasi, address bar, dan tab belum ada (Stage 2).</string>
+
+    <string name="address_hint">Cari atau ketik alamat web</string>
+    <string name="action_back">Kembali</string>
+    <string name="action_forward">Maju</string>
+    <string name="action_reload">Muat ulang</string>
+    <string name="action_stop">Hentikan</string>
+    <string name="secure_connection">Sambungan aman (HTTPS)</string>
+    <string name="not_secure">Sambungan tidak aman</string>
+    <string name="dismiss">Tutup</string>
+
+    <string name="msg_invalid_input">Alamat atau skema ini tidak didukung.</string>
+    <string name="msg_no_app">Tidak ada aplikasi untuk membuka tautan ini.</string>
+    <string name="page_process_stopped">Proses halaman berhenti. Memuat ulang halaman.</string>
+
+    <string name="err_offline_title">Tidak ada koneksi internet</string>
+    <string name="err_offline_detail">Periksa Wi-Fi atau data seluler, lalu muat ulang halaman.</string>
+    <string name="err_host_title">Situs tidak ditemukan</string>
+    <string name="err_host_detail">Alamat tidak dapat diterjemahkan. Periksa ejaan alamat atau pengaturan DNS Anda.</string>
+    <string name="err_timeout_title">Waktu koneksi habis</string>
+    <string name="err_timeout_detail">Situs terlalu lama merespons. Coba lagi beberapa saat lagi.</string>
+    <string name="err_refused_title">Koneksi ditolak</string>
+    <string name="err_refused_detail">Server menolak sambungan. Situs mungkin sedang tidak aktif.</string>
+    <string name="err_security_title">Sambungan tidak aman</string>
+    <string name="err_security_detail">Sertifikat keamanan situs tidak valid. Browsery tidak melewati peringatan ini secara otomatis.</string>
+    <string name="err_generic_title">Halaman tidak dapat dimuat</string>
+    <string name="err_generic_detail">Terjadi kesalahan saat memuat halaman. Coba lagi nanti.</string>
 </resources>
