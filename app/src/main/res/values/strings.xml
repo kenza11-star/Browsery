@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Browsery</string>
+    <string name="stage1_status">Stage 1: fondasi aplikasi. GeckoView terpasang dan membuka halaman kosong. Navigasi, address bar, dan tab belum ada (Stage 2).</string>
+</resources>
