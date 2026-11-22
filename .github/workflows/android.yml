@@ -27,8 +27,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # Runner ubuntu-latest sudah membawa Android SDK (ANDROID_HOME). Cukup terima lisensi.
+      - name: Accept Android SDK licenses
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: Setup Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
@@ -51,10 +54,12 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      - name: Upload lint report
+      - name: Upload reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: lint-report
-          path: app/build/reports/lint-results-debug.*
+          name: reports
+          path: |
+            app/build/reports/lint-results-debug.*
+            app/build/reports/tests/
           if-no-files-found: ignore
