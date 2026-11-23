@@ -13,8 +13,8 @@ android {
         applicationId = "dev.browsery.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.3.0"
+        versionCode = 3
+        versionName = "0.4.0"
 
         // Hanya arm64-v8a (sesuai artefak GeckoView yang dipakai).
         ndk {
@@ -53,10 +53,13 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.core:core-ktx:1.19.0")
 
-    // Data lokal (bookmark, riwayat, pintasan, sesi tab).
+    // Data lokal (bookmark, riwayat, pintasan, sesi tab, unduhan).
     implementation("androidx.room:room-runtime:2.8.5")
     implementation("androidx.room:room-ktx:2.8.5")
     ksp("androidx.room:room-compiler:2.8.5")
+
+    // Pengaturan.
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
 
     // Mesin web: GeckoView rilis stabil, arm64-v8a.
     implementation("org.mozilla.geckoview:geckoview-arm64-v8a:159.0.20261102144711")

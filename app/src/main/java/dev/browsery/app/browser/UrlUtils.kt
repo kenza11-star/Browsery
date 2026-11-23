@@ -16,6 +16,10 @@ object UrlUtils {
     const val DEFAULT_SEARCH_TEMPLATE = "https://www.google.com/search?q=%s"
     const val BLANK = "about:blank"
 
+    /** Template pencarian aktif (diatur dari Pengaturan). Default sama dengan [DEFAULT_SEARCH_TEMPLATE]. */
+    @Volatile
+    var currentTemplate: String = DEFAULT_SEARCH_TEMPLATE
+
     private val schemeRegex = Regex("^([a-zA-Z][a-zA-Z0-9+.-]*):")
     private val authorityRegex = Regex(
         "^(localhost|(\\d{1,3}\\.){3}\\d{1,3}|([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?$",
@@ -27,7 +31,7 @@ object UrlUtils {
         "javascript", "data", "file", "blob", "intent", "content", "view-source", "vbscript",
     )
 
-    fun resolve(raw: String, searchTemplate: String = DEFAULT_SEARCH_TEMPLATE): ResolvedInput {
+    fun resolve(raw: String, searchTemplate: String = currentTemplate): ResolvedInput {
         val input = raw.trim()
         if (input.isEmpty()) return ResolvedInput.Empty
         if (input.any { it.isISOControl() }) return ResolvedInput.Rejected
@@ -55,7 +59,7 @@ object UrlUtils {
         return ResolvedInput.Search(buildSearchUrl(input, searchTemplate), input)
     }
 
-    fun buildSearchUrl(query: String, template: String = DEFAULT_SEARCH_TEMPLATE): String =
+    fun buildSearchUrl(query: String, template: String = currentTemplate): String =
         template.replace("%s", URLEncoder.encode(query, "UTF-8"))
 
     /** Template valid: http/https, tanpa spasi, tepat satu penanda %s. */
