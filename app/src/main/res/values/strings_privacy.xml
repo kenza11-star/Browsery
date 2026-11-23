@@ -27,7 +27,7 @@
     <string name="privacy_remove">Hapus</string>
 
     <string name="privacy_limits_title">Batasan</string>
-    <string name="privacy_limits">Tidak ada klaim 100% aman. Pemblokiran iklan penuh seperti Brave Shields (daftar filter khusus, kosmetik) belum ada; yang aktif hanyalah daftar bawaan Gecko. Sertifikat tidak valid tidak pernah dilewati otomatis. Konten campuran dan izin situs mengikuti perilaku bawaan Gecko; antarmuka izin per situs belum ada. Tidak ada analitik atau pengiriman riwayat ke server.</string>
+    <string name="privacy_limits">Tidak ada jaminan keamanan mutlak. Pemblokiran iklan penuh seperti Brave Shields (daftar filter khusus, kosmetik) belum ada; yang aktif hanyalah daftar bawaan Gecko. Sertifikat tidak valid tidak pernah dilewati otomatis. Konten campuran dan izin situs mengikuti perilaku bawaan Gecko; antarmuka izin per situs belum ada. Tidak ada analitik atau pengiriman riwayat ke server.</string>
 
     <string name="site_title">Info situs</string>
     <string name="site_host">Situs: %1$s</string>
