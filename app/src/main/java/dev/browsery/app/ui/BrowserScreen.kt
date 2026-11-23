@@ -76,25 +76,28 @@ import dev.browsery.app.data.AppDatabase
 import dev.browsery.app.data.BookmarkEntity
 import dev.browsery.app.download.DownloadManager
 import dev.browsery.app.engine.GeckoHost
+import dev.browsery.app.settings.AppSettings
 import kotlinx.coroutines.launch
 
-enum class Page { Browser, Tabs, Bookmarks, History, Downloads }
+enum class Page { Browser, Tabs, Bookmarks, History, Downloads, Settings }
 
 @Composable
-fun AppRoot(tabs: TabManager, db: AppDatabase, downloads: DownloadManager) {
+fun AppRoot(tabs: TabManager, db: AppDatabase, downloads: DownloadManager, settings: AppSettings) {
     var page by remember { mutableStateOf(Page.Browser) }
+    val s by settings.state.collectAsState()
     BackHandler(enabled = page != Page.Browser) { page = Page.Browser }
     when (page) {
-        Page.Browser -> BrowserPage(tabs, db, go = { page = it })
+        Page.Browser -> BrowserPage(tabs, db, bottomBar = s.toolbarBottom, go = { page = it })
         Page.Tabs -> TabsPage(tabs, onClose = { page = Page.Browser })
         Page.Bookmarks -> BookmarksPage(db, tabs, onClose = { page = Page.Browser })
         Page.History -> HistoryPage(db, tabs, onClose = { page = Page.Browser })
         Page.Downloads -> DownloadsPage(downloads, onClose = { page = Page.Browser })
+        Page.Settings -> SettingsPage(settings, db, downloads, onClose = { page = Page.Browser })
     }
 }
 
 @Composable
-fun BrowserPage(tabs: TabManager, db: AppDatabase, go: (Page) -> Unit) {
+fun BrowserPage(tabs: TabManager, db: AppDatabase, bottomBar: Boolean, go: (Page) -> Unit) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val wide = LocalConfiguration.current.screenWidthDp >= 600
@@ -112,67 +115,51 @@ fun BrowserPage(tabs: TabManager, db: AppDatabase, go: (Page) -> Unit) {
         if (fullscreen) controller?.exitFullScreen() else controller?.goBack()
     }
 
+    val chrome: @Composable () -> Unit = {
+        if (wide) TabStrip(tabs)
+        if (bottomBar) {
+            // Progres dan pesan di atas toolbar agar dekat dengan konten.
+            ProgressAndMessage(st, isHome, controller)
+        }
+        Toolbar(
+            tabs = tabs,
+            active = active,
+            controller = controller,
+            st = st,
+            wide = wide,
+            isHome = isHome,
+            canBookmark = canBookmark,
+            bookmarked = bookmarked,
+            onToggleBookmark = {
+                if (canBookmark) {
+                    scope.launch {
+                        if (bookmarked) {
+                            db.bookmarkDao().deleteByUrl(url)
+                        } else {
+                            db.bookmarkDao().insert(
+                                BookmarkEntity(
+                                    url = url,
+                                    title = st?.title.orEmpty().ifBlank { url },
+                                    createdAt = System.currentTimeMillis(),
+                                ),
+                            )
+                        }
+                    }
+                }
+            },
+            onShare = { if (canBookmark) sharePage(ctx, url) },
+            go = go,
+        )
+        if (!bottomBar) ProgressAndMessage(st, isHome, controller)
+    }
+
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .then(if (fullscreen) Modifier else Modifier.safeDrawingPadding()),
         ) {
-            if (!fullscreen) {
-                if (wide) TabStrip(tabs)
-                Toolbar(
-                    tabs = tabs,
-                    active = active,
-                    controller = controller,
-                    st = st,
-                    wide = wide,
-                    isHome = isHome,
-                    canBookmark = canBookmark,
-                    bookmarked = bookmarked,
-                    onToggleBookmark = {
-                        if (canBookmark) {
-                            scope.launch {
-                                if (bookmarked) {
-                                    db.bookmarkDao().deleteByUrl(url)
-                                } else {
-                                    db.bookmarkDao().insert(
-                                        BookmarkEntity(
-                                            url = url,
-                                            title = st?.title.orEmpty().ifBlank { url },
-                                            createdAt = System.currentTimeMillis(),
-                                        ),
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    onShare = { if (canBookmark) sharePage(ctx, url) },
-                    go = go,
-                )
-                if (st?.isLoading == true && !isHome) {
-                    LinearProgressIndicator(
-                        progress = { maxOf(st.progress, 5) / 100f },
-                        modifier = Modifier.fillMaxWidth().height(3.dp),
-                    )
-                }
-                st?.message?.let { msg ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            text = msg,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.weight(1f),
-                        )
-                        TextButton(onClick = { controller?.dismissMessage() }) {
-                            Text(stringResource(R.string.dismiss))
-                        }
-                    }
-                }
-            }
+            if (!fullscreen && !bottomBar) chrome()
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 if (isHome || controller == null || active == null) {
                     HomePage(tabs, db)
@@ -181,6 +168,34 @@ fun BrowserPage(tabs: TabManager, db: AppDatabase, go: (Page) -> Unit) {
                         GeckoHost(session = controller.session, modifier = Modifier.fillMaxSize())
                     }
                 }
+            }
+            if (!fullscreen && bottomBar) chrome()
+        }
+    }
+}
+
+@Composable
+private fun ProgressAndMessage(st: BrowserState?, isHome: Boolean, controller: BrowserController?) {
+    if (st?.isLoading == true && !isHome) {
+        LinearProgressIndicator(
+            progress = { maxOf(st.progress, 5) / 100f },
+            modifier = Modifier.fillMaxWidth().height(3.dp),
+        )
+    }
+    st?.message?.let { msg ->
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = msg,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = { controller?.dismissMessage() }) {
+                Text(stringResource(R.string.dismiss))
             }
         }
     }
@@ -393,7 +408,10 @@ private fun Toolbar(
                 HorizontalDivider()
                 DropdownMenuItem(text = { Text(stringResource(R.string.menu_find)) }, onClick = {}, enabled = false)
                 DropdownMenuItem(text = { Text(stringResource(R.string.menu_desktop)) }, onClick = {}, enabled = false)
-                DropdownMenuItem(text = { Text(stringResource(R.string.menu_settings)) }, onClick = {}, enabled = false)
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.settings_title)) },
+                    onClick = { menu = false; go(Page.Settings) },
+                )
             }
         }
     }

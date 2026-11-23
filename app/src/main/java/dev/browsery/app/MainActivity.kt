@@ -9,18 +9,24 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import dev.browsery.app.browser.TabManager
 import dev.browsery.app.data.AppDatabase
 import dev.browsery.app.download.DownloadManager
+import dev.browsery.app.settings.AppSettings
+import dev.browsery.app.settings.ThemeMode
 import dev.browsery.app.ui.AppRoot
 import dev.browsery.app.ui.BrowseryTheme
 
 class MainActivity : ComponentActivity() {
     private lateinit var tabs: TabManager
     private lateinit var downloads: DownloadManager
+    private lateinit var settings: AppSettings
 
     private val notificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* unduhan tetap berjalan tanpa notifikasi */ }
@@ -28,16 +34,24 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val app = application as BrowseryApp
         val db = AppDatabase.get(applicationContext)
-        downloads = (application as BrowseryApp).downloads
+        settings = app.settings
+        downloads = app.downloads
         downloads.onFirstEnqueue = ::askNotificationPermission
         downloads.start()
         tabs = TabManager(applicationContext, db)
         tabs.onFullScreenChange = ::applyFullScreen
         tabs.start()
         setContent {
-            BrowseryTheme {
-                AppRoot(tabs, db, downloads)
+            val s by settings.state.collectAsState()
+            val dark = when (s.theme) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+            BrowseryTheme(darkTheme = dark) {
+                AppRoot(tabs, db, downloads, settings)
             }
         }
         // Hindari membuka ulang tautan yang sama saat Activity dibuat ulang.

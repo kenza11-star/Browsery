@@ -2,8 +2,8 @@
 <resources>
     <string name="settings_title">Pengaturan</string>
     <string name="settings_search">Mesin pencari</string>
-    <string name="settings_custom_template">Alamat pencarian kustom (gunakan %%s untuk kata kunci)</string>
-    <string name="settings_custom_invalid">Harus diawali http:// atau https://, tanpa spasi, dan memuat tepat satu %%s.</string>
+    <string name="settings_custom_template" formatted="false">Alamat pencarian kustom (gunakan %s untuk kata kunci)</string>
+    <string name="settings_custom_invalid" formatted="false">Harus diawali http:// atau https://, tanpa spasi, dan memuat tepat satu %s.</string>
     <string name="settings_custom_inactive">Alamat kustom belum valid: sementara memakai Google.</string>
 
     <string name="settings_appearance">Tampilan</string>
