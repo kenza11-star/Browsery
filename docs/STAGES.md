@@ -11,7 +11,7 @@ Status jujur per stage. "VERIFIED" hanya bila ada bukti (run Actions, commit SHA
 | 5 | Download manager + paralel | IMPLEMENTED. Build hijau pada `20216ff` (run 45145145026). Engine diuji unit terhadap server HTTP lokal. |
 | 6 | Settings center | PARTIAL. Build hijau pada `c6bd20a` (run 45146754668). Ada: mesin pencari (preset + kustom), tema, posisi toolbar, koneksi unduhan, hapus riwayat/cookie/cache, reset. BELUM ada dari spesifikasi: pencarian pengaturan, ringkasan per item untuk semua kategori, Wi-Fi only, folder unduhan, batas kecepatan, ukuran teks/zoom, kategori Tabs, Permissions, Accessibility, Data/Account, export/import bookmark, halaman Advanced/About lengkap. |
 | 7 | Privasi, tracker blocking | IMPLEMENTED (lihat batasan). Build hijau pada `89eb220` (job 137953548884: unit test, assembleDebug, lint sukses). Belum diuji di perangkat/situs nyata. |
-| 8 | WebExtensions | Belum. |
+| 8 | WebExtensions | IMPLEMENTED terbatas (lihat matriks). Build hijau pada `9ba1c32` (run 45250928664, job 137960201814: unit test, assembleDebug, lint). Belum diuji di perangkat. |
 | 9 | Akun Supabase + Google Sign-In | Backend: tabel profil + RLS dibuat dan diuji. Klien Android: belum. |
 | 10 | Cloud sync | Backend: skema + RLS dibuat dan diuji. Klien sync: belum. |
 | 11-14 | Fitur lanjutan, performa, rilis, regresi | Belum. |
@@ -49,3 +49,18 @@ Status jujur per stage. "VERIFIED" hanya bila ada bukti (run Actions, commit SHA
 - Halaman Privasi dan keamanan dipisah dari Pengaturan (belum digabung).
 - Sertifikat TLS tidak valid tidak pernah dilewati; halaman error menjelaskan dan tidak menawarkan bypass.
 - BELUM: pemblokir iklan penuh seperti Brave Shields (hanya daftar bawaan Gecko), UI izin per situs (kamera/mikrofon/lokasi/notifikasi), pembaruan daftar filter kustom, DNS aman. Tidak ada analitik dan tidak ada pengiriman riwayat ke server.
+
+## Stage 8 - Ekstensi (matriks dukungan)
+
+| Kemampuan | Status |
+|---|---|
+| Ekstensi bawaan "Pembersih Tautan" (MV2, content script, tanpa izin API) | DIDUKUNG (build hijau; belum diuji di perangkat) |
+| Pasang ulang ekstensi bawaan saat aplikasi dibuka | DIDUKUNG (tidak diuji di perangkat) |
+| Aktif/nonaktif, hapus, dialog persetujuan akses situs | DIDUKUNG |
+| Aktif di tab privat | TERBATAS: mati secara bawaan, opt-in per ekstensi dengan persetujuan |
+| Prompt izin dari ekstensi | TERBATAS: semua prompt ditolak otomatis |
+| Pasang ekstensi pihak ketiga (file/URL/AMO) | TIDAK DIDUKUNG |
+| Ikon aksi toolbar / popup / halaman opsi ekstensi | TIDAK DIDUKUNG |
+| Pembaruan otomatis ekstensi | TIDAK DIDUKUNG |
+
+Catatan: kompatibilitas dengan ekstensi Chrome/Firefox lain tidak diklaim; hanya ekstensi bawaan yang diuji unit (katalog vs manifest).
