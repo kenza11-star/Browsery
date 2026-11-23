@@ -8,8 +8,8 @@ Status jujur per stage. "VERIFIED" hanya bila ada bukti (run Actions, commit SHA
 | 2 | GeckoView dan navigasi | IMPLEMENTED, build hijau, 17 unit test URL lulus. Belum diuji di perangkat/situs nyata. |
 | 3 | UI Chrome-like, beranda | IMPLEMENTED. Build hijau pada commit `79d3dce` (run 45084717946). Belum diuji di perangkat. |
 | 4 | Multi-tab, history, bookmarks, private | IMPLEMENTED. Logika tab diuji unit (`TabOpsTest`). Room/restore/isolasi privat belum diuji instrumented/perangkat. |
-| 5 | Download manager + paralel | IMPLEMENTED. Build hijau pada commit `20216ff` (run 45145145026: unit test, assembleDebug, lint sukses). Engine diuji unit terhadap server HTTP lokal. Belum diuji di perangkat/situs nyata. |
-| 6 | Settings center | Belum. |
+| 5 | Download manager + paralel | IMPLEMENTED. Build hijau pada commit `20216ff` (run 45145145026). Engine diuji unit terhadap server HTTP lokal. Belum diuji di perangkat/situs nyata. |
+| 6 | Settings center | IMPLEMENTED (lihat batasan). Build hijau pada commit `c6bd20a` (run 46146754668 tercatat sebagai run 45146754668: unit test, assembleDebug, lint sukses). Logika pengaturan diuji unit. Belum diuji di perangkat. |
 | 7 | Privasi, tracker blocking | Belum. |
 | 8 | WebExtensions | Belum. |
 | 9 | Akun Supabase + Google Sign-In | Backend: tabel profil + RLS dibuat dan diuji. Klien Android: belum. |
@@ -19,8 +19,8 @@ Status jujur per stage. "VERIFIED" hanya bila ada bukti (run Actions, commit SHA
 ## Batasan Stage 3-4
 
 - Grup tab (nama/warna) BELUM ada. Tab dapat dibuka, ditutup, digeser, dibuka lagi (10 terakhir).
-- Menu yang belum aktif (Cari di halaman, Situs desktop, Pengaturan) tampil nonaktif dengan keterangan stage-nya.
-- Posisi toolbar atas/bawah belum ada (menunggu Settings, Stage 6). Toolbar di ponsel memindahkan maju/muat ulang/bookmark ke menu; layar lebar (>= 600dp) menampilkan strip tab dan semua tombol.
+- Menu yang belum aktif (Cari di halaman, Situs desktop) tampil nonaktif dengan keterangan stage-nya.
+- Toolbar di ponsel memindahkan maju/muat ulang/bookmark ke menu; layar lebar (>= 600dp) menampilkan strip tab dan semua tombol.
 - Maksimal 6 session tab normal dimuat sekaligus; sisanya dilepas dan dimuat ulang dari URL terakhir (posisi scroll/isian form tidak dipertahankan). Tab privat tidak pernah dilepas otomatis.
 - Restore: hanya tab normal (URL + judul + tab aktif) dan hanya tab aktif yang dimuat saat start.
 - Mode privat: memakai `usePrivateMode` GeckoSession; riwayat tidak dicatat; tab privat tidak disimpan ke disk dan tidak pernah disinkronkan. Isolasi cookie/storage Gecko BELUM diaudit; jangan dianggap terbukti.
@@ -37,3 +37,10 @@ Status jujur per stage. "VERIFIED" hanya bila ada bukti (run Actions, commit SHA
 - Notifikasi: service latar depan `dataSync` hanya selama ada unduhan; izin notifikasi diminta sekali saat unduhan pertama. Pada Android 15+ batas waktu service menjeda unduhan agar bisa dilanjutkan manual.
 - Tab privat TIDAK mengunduh (ditolak dengan pesan), agar tidak ada jejak.
 - Batasan: cookie/otorisasi sesi halaman TIDAK ikut ke mesin unduhan (situs yang butuh login bisa gagal); belum ada batas kecepatan; pelanjutan setelah proses dihentikan hanya saat aplikasi dibuka lagi; migrasi Room 1 ke 2 belum diuji di perangkat; skema Room belum diekspor; hanya http/https.
+
+## Stage 6 - Pengaturan: isi dan batasan
+
+- Tersimpan di DataStore Preferences (hanya lokal, tidak disinkronkan, tanpa data sensitif): mesin pencari (Google, DuckDuckGo, Bing, atau kustom dengan validasi `%s`), tema (sistem/terang/gelap), posisi toolbar (atas/bawah). Koneksi paralel unduhan juga dapat diubah dari sini (masih di SharedPreferences).
+- Hapus data: riwayat (Room), cookie + data situs, dan cache (lewat `StorageController` GeckoView), masing-masing dengan konfirmasi. Bookmark dan unduhan tidak ikut terhapus. Atur ulang hanya mengembalikan pengaturan, bukan data.
+- Mesin pencari diteruskan ke `UrlUtils.currentTemplate` (status global sederhana) agar address bar memakainya.
+- Batasan: ikon status bar tidak menyesuaikan saat tema dipaksa berbeda dari sistem; tidak ada pengaturan halaman beranda, bahasa, atau izin situs; pengaturan privasi/pelacak menunggu Stage 7; hasil penghapusan cookie/cache oleh GeckoView belum diuji di perangkat.
