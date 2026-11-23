@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dl_title">Unduhan</string>
+    <string name="dl_menu">Unduhan</string>
+    <string name="dl_empty">Belum ada unduhan. Tautan berkas yang dibuka di tab biasa akan muncul di sini.</string>
+    <string name="dl_clear">Bersihkan daftar</string>
+    <string name="dl_connections">Koneksi paralel per berkas</string>
+    <string name="dl_conn_auto">Otomatis</string>
+
+    <string name="dl_state_queued">Menunggu giliran</string>
+    <string name="dl_state_paused">Dijeda · %1$s</string>
+    <string name="dl_state_done">Selesai · %1$s</string>
+    <string name="dl_state_failed">Gagal: %1$s</string>
+    <string name="dl_running_known">%1$s dari %2$s · %3$s · sisa %4$s</string>
+    <string name="dl_running_unknown">%1$s · %2$s</string>
+
+    <string name="dl_pause">Jeda</string>
+    <string name="dl_resume">Lanjutkan</string>
+    <string name="dl_retry">Coba lagi</string>
+    <string name="dl_open">Buka</string>
+    <string name="dl_delete">Hapus</string>
+    <string name="dl_confirm_delete">Hapus unduhan ini? Berkas yang sudah tersimpan juga ikut dihapus.</string>
+    <string name="dl_cannot_open">Tidak ada aplikasi untuk membuka berkas ini.</string>
+
+    <string name="dl_started">Mengunduh: %1$s</string>
+    <string name="dl_private_blocked">Unduhan dari tab privat belum didukung agar tidak ada jejak yang tersimpan.</string>
+    <string name="dl_unsupported_scheme">Hanya unduhan http/https yang didukung.</string>
+
+    <string name="dl_err_http">Server menolak unduhan (%1$s)</string>
+    <string name="dl_err_network">Koneksi terputus. Coba lagi.</string>
+    <string name="dl_err_changed">Berkas di server berubah. Coba lagi untuk mengunduh ulang dari awal.</string>
+    <string name="dl_err_io">Gagal menulis berkas. Periksa ruang penyimpanan.</string>
+    <string name="dl_err_unsupported">Alamat unduhan tidak didukung.</string>
+    <string name="dl_err_size">Ukuran berkas tidak sesuai dengan yang dijanjikan server.</string>
+    <string name="dl_err_save">Gagal menyimpan berkas ke folder Unduhan.</string>
+
+    <string name="dl_notif_channel">Unduhan</string>
+    <string name="dl_notif_title">Mengunduh %1$d berkas</string>
+    <string name="dl_notif_text">%1$s dari %2$s</string>
+</resources>
