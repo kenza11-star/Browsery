@@ -18,6 +18,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import dev.browsery.app.browser.TabManager
 import dev.browsery.app.data.AppDatabase
 import dev.browsery.app.download.DownloadManager
+import dev.browsery.app.extensions.ExtensionManager
 import dev.browsery.app.settings.AppSettings
 import dev.browsery.app.settings.ThemeMode
 import dev.browsery.app.ui.AppRoot
@@ -27,6 +28,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var tabs: TabManager
     private lateinit var downloads: DownloadManager
     private lateinit var settings: AppSettings
+    private lateinit var extensions: ExtensionManager
 
     private val notificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* unduhan tetap berjalan tanpa notifikasi */ }
@@ -38,11 +40,18 @@ class MainActivity : ComponentActivity() {
         val db = AppDatabase.get(applicationContext)
         settings = app.settings
         downloads = app.downloads
+        extensions = app.extensions
         downloads.onFirstEnqueue = ::askNotificationPermission
         downloads.start()
         tabs = TabManager(applicationContext, db)
         tabs.onFullScreenChange = ::applyFullScreen
         tabs.start()
+        // Pasang ulang ekstensi yang pernah disetujui pengguna; kegagalan hanya menjadi status per ekstensi.
+        try {
+            extensions.restore()
+        } catch (e: Exception) {
+            // jangan menggagalkan start aplikasi
+        }
         setContent {
             val s by settings.state.collectAsState()
             val dark = when (s.theme) {
@@ -51,7 +60,7 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.DARK -> true
             }
             BrowseryTheme(darkTheme = dark) {
-                AppRoot(tabs, db, downloads, settings)
+                AppRoot(tabs, db, downloads, settings, extensions)
             }
         }
         // Hindari membuka ulang tautan yang sama saat Activity dibuat ulang.

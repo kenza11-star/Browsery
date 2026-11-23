@@ -76,13 +76,20 @@ import dev.browsery.app.data.AppDatabase
 import dev.browsery.app.data.BookmarkEntity
 import dev.browsery.app.download.DownloadManager
 import dev.browsery.app.engine.GeckoHost
+import dev.browsery.app.extensions.ExtensionManager
 import dev.browsery.app.settings.AppSettings
 import kotlinx.coroutines.launch
 
-enum class Page { Browser, Tabs, Bookmarks, History, Downloads, Settings, Privacy }
+enum class Page { Browser, Tabs, Bookmarks, History, Downloads, Settings, Privacy, Extensions }
 
 @Composable
-fun AppRoot(tabs: TabManager, db: AppDatabase, downloads: DownloadManager, settings: AppSettings) {
+fun AppRoot(
+    tabs: TabManager,
+    db: AppDatabase,
+    downloads: DownloadManager,
+    settings: AppSettings,
+    extensions: ExtensionManager,
+) {
     var page by remember { mutableStateOf(Page.Browser) }
     val s by settings.state.collectAsState()
     BackHandler(enabled = page != Page.Browser) { page = Page.Browser }
@@ -94,6 +101,7 @@ fun AppRoot(tabs: TabManager, db: AppDatabase, downloads: DownloadManager, setti
         Page.Downloads -> DownloadsPage(downloads, onClose = { page = Page.Browser })
         Page.Settings -> SettingsPage(settings, db, downloads, onClose = { page = Page.Browser })
         Page.Privacy -> PrivacyPage(settings, onClose = { page = Page.Browser })
+        Page.Extensions -> ExtensionsPage(extensions, onClose = { page = Page.Browser })
     }
 }
 
@@ -422,6 +430,10 @@ private fun Toolbar(
                 HorizontalDivider()
                 DropdownMenuItem(text = { Text(stringResource(R.string.menu_find)) }, onClick = {}, enabled = false)
                 DropdownMenuItem(text = { Text(stringResource(R.string.menu_desktop)) }, onClick = {}, enabled = false)
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.menu_extensions)) },
+                    onClick = { menu = false; go(Page.Extensions) },
+                )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.menu_privacy)) },
                     onClick = { menu = false; go(Page.Privacy) },
