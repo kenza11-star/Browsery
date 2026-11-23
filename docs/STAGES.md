@@ -1,16 +1,16 @@
 # Status Stage
 
-Status jujur per stage. "VERIFIED" hanya bila ada bukti (run Actions, commit SHA, artifact, atau hasil query).
+Status jujur per stage. "VERIFIED" hanya bila ada bukti (run Actions, commit SHA, artifact, atau hasil query). Belum ada satu pun stage yang diuji di perangkat/emulator.
 
 | Stage | Topik | Status |
 |---|---|---|
-| 1 | Repo, arsitektur, bootstrap, build pertama | VERIFIED build: run Actions hijau pada commit `ce7cd72` (unit test, assembleDebug, lint, artifact `browsery-debug-apk`). Belum diuji di perangkat. |
-| 2 | GeckoView dan navigasi | IMPLEMENTED, build hijau, 17 unit test URL lulus. Belum diuji di perangkat/situs nyata. |
-| 3 | UI Chrome-like, beranda | IMPLEMENTED. Build hijau pada commit `79d3dce` (run 45084717946). Belum diuji di perangkat. |
-| 4 | Multi-tab, history, bookmarks, private | IMPLEMENTED. Logika tab diuji unit (`TabOpsTest`). Room/restore/isolasi privat belum diuji instrumented/perangkat. |
-| 5 | Download manager + paralel | IMPLEMENTED. Build hijau pada commit `20216ff` (run 45145145026). Engine diuji unit terhadap server HTTP lokal. Belum diuji di perangkat/situs nyata. |
-| 6 | Settings center | IMPLEMENTED (lihat batasan). Build hijau pada commit `c6bd20a` (run 46146754668 tercatat sebagai run 45146754668: unit test, assembleDebug, lint sukses). Logika pengaturan diuji unit. Belum diuji di perangkat. |
-| 7 | Privasi, tracker blocking | Belum. |
+| 1 | Repo, arsitektur, bootstrap, build pertama | VERIFIED build: run hijau pada commit `ce7cd72`. |
+| 2 | GeckoView dan navigasi | IMPLEMENTED, build hijau, 17 unit test URL lulus. |
+| 3 | UI Chrome-like, beranda | IMPLEMENTED. Build hijau pada `79d3dce` (run 45084717946). |
+| 4 | Multi-tab, history, bookmarks, private | IMPLEMENTED. Logika tab diuji unit. Room/restore/isolasi privat belum diuji di perangkat. |
+| 5 | Download manager + paralel | IMPLEMENTED. Build hijau pada `20216ff` (run 45145145026). Engine diuji unit terhadap server HTTP lokal. |
+| 6 | Settings center | PARTIAL. Build hijau pada `c6bd20a` (run 45146754668). Ada: mesin pencari (preset + kustom), tema, posisi toolbar, koneksi unduhan, hapus riwayat/cookie/cache, reset. BELUM ada dari spesifikasi: pencarian pengaturan, ringkasan per item untuk semua kategori, Wi-Fi only, folder unduhan, batas kecepatan, ukuran teks/zoom, kategori Tabs, Permissions, Accessibility, Data/Account, export/import bookmark, halaman Advanced/About lengkap. |
+| 7 | Privasi, tracker blocking | IMPLEMENTED (lihat batasan). Build hijau pada `89eb220` (job 137953548884: unit test, assembleDebug, lint sukses). Belum diuji di perangkat/situs nyata. |
 | 8 | WebExtensions | Belum. |
 | 9 | Akun Supabase + Google Sign-In | Backend: tabel profil + RLS dibuat dan diuji. Klien Android: belum. |
 | 10 | Cloud sync | Backend: skema + RLS dibuat dan diuji. Klien sync: belum. |
@@ -18,29 +18,34 @@ Status jujur per stage. "VERIFIED" hanya bila ada bukti (run Actions, commit SHA
 
 ## Batasan Stage 3-4
 
-- Grup tab (nama/warna) BELUM ada. Tab dapat dibuka, ditutup, digeser, dibuka lagi (10 terakhir).
-- Menu yang belum aktif (Cari di halaman, Situs desktop) tampil nonaktif dengan keterangan stage-nya.
-- Toolbar di ponsel memindahkan maju/muat ulang/bookmark ke menu; layar lebar (>= 600dp) menampilkan strip tab dan semua tombol.
-- Maksimal 6 session tab normal dimuat sekaligus; sisanya dilepas dan dimuat ulang dari URL terakhir (posisi scroll/isian form tidak dipertahankan). Tab privat tidak pernah dilepas otomatis.
-- Restore: hanya tab normal (URL + judul + tab aktif) dan hanya tab aktif yang dimuat saat start.
-- Mode privat: memakai `usePrivateMode` GeckoSession; riwayat tidak dicatat; tab privat tidak disimpan ke disk dan tidak pernah disinkronkan. Isolasi cookie/storage Gecko BELUM diaudit; jangan dianggap terbukti.
-- Pintasan beranda dimulai kosong; tidak ada data contoh.
+- Grup tab BELUM ada. Tab dapat dibuka, ditutup, digeser, dibuka lagi (10 terakhir).
+- Menu "Cari di halaman" dan "Situs desktop" tampil nonaktif.
+- Maksimal 6 session tab normal dimuat sekaligus; sisanya dimuat ulang dari URL terakhir.
+- Restore: hanya tab normal (URL + judul + tab aktif); hanya tab aktif yang dimuat saat start.
+- Mode privat memakai `usePrivateMode`; riwayat tidak dicatat; tidak disimpan/disinkronkan. Isolasi cookie/storage Gecko BELUM diaudit.
 - Belum ada favicon, UI test Compose, atau uji perangkat/emulator.
 
-## Stage 5 - Unduhan: cara kerja dan batasan
+## Stage 5 - Unduhan
 
-- Engine memakai `HttpURLConnection`. Bila server mendukung Range (206 + `Content-Range` valid + ukuran diketahui), berkas dibagi menjadi potongan dan tiap potongan diunduh oleh satu koneksi (1 / 2 / 4 / 8 atau otomatis menurut ukuran). Bila tidak, dipakai satu aliran biasa (tidak bisa dilanjutkan; mulai dari nol).
-- Jumlah koneksi paralel per berkas terpisah dari batas berkas bersamaan (default 3).
-- Resume hanya bila ukuran, ETag/Last-Modified sama dan berkas parsial utuh; selain itu mengunduh ulang dari awal. `If-Range` dan validasi `Content-Range` dipakai agar tidak tercampur dua versi berkas.
-- Percobaan ulang dengan backoff pada kesalahan jaringan/5xx; deteksi data terpotong; ukuran akhir divalidasi.
-- Penyimpanan: Android 10+ ke `Download/Browsery` lewat MediaStore; Android 9- ke folder khusus aplikasi (FileProvider untuk membuka).
-- Notifikasi: service latar depan `dataSync` hanya selama ada unduhan; izin notifikasi diminta sekali saat unduhan pertama. Pada Android 15+ batas waktu service menjeda unduhan agar bisa dilanjutkan manual.
-- Tab privat TIDAK mengunduh (ditolak dengan pesan), agar tidak ada jejak.
-- Batasan: cookie/otorisasi sesi halaman TIDAK ikut ke mesin unduhan (situs yang butuh login bisa gagal); belum ada batas kecepatan; pelanjutan setelah proses dihentikan hanya saat aplikasi dibuka lagi; migrasi Room 1 ke 2 belum diuji di perangkat; skema Room belum diekspor; hanya http/https.
+- `HttpURLConnection`; Range paralel bila server mendukung (1/2/4/8 koneksi atau otomatis), selain itu satu aliran (tidak bisa dilanjutkan).
+- Resume hanya bila ukuran + ETag/Last-Modified sama; `If-Range` dan validasi `Content-Range`.
+- Retry dengan backoff; deteksi data terpotong; validasi ukuran akhir.
+- Android 10+ ke `Download/Browsery` (MediaStore); Android 9- ke folder aplikasi.
+- Service latar depan `dataSync`; izin notifikasi diminta sekali. Android 15+ menjeda unduhan saat batas waktu service.
+- Tab privat TIDAK mengunduh.
+- Batasan: cookie/otorisasi sesi tidak ikut ke mesin unduhan; belum ada batas kecepatan; lanjut setelah proses mati hanya saat app dibuka lagi; migrasi Room 1 ke 2 belum diuji di perangkat; skema Room belum diekspor.
 
-## Stage 6 - Pengaturan: isi dan batasan
+## Stage 6 - Pengaturan
 
-- Tersimpan di DataStore Preferences (hanya lokal, tidak disinkronkan, tanpa data sensitif): mesin pencari (Google, DuckDuckGo, Bing, atau kustom dengan validasi `%s`), tema (sistem/terang/gelap), posisi toolbar (atas/bawah). Koneksi paralel unduhan juga dapat diubah dari sini (masih di SharedPreferences).
-- Hapus data: riwayat (Room), cookie + data situs, dan cache (lewat `StorageController` GeckoView), masing-masing dengan konfirmasi. Bookmark dan unduhan tidak ikut terhapus. Atur ulang hanya mengembalikan pengaturan, bukan data.
-- Mesin pencari diteruskan ke `UrlUtils.currentTemplate` (status global sederhana) agar address bar memakainya.
-- Batasan: ikon status bar tidak menyesuaikan saat tema dipaksa berbeda dari sistem; tidak ada pengaturan halaman beranda, bahasa, atau izin situs; pengaturan privasi/pelacak menunggu Stage 7; hasil penghapusan cookie/cache oleh GeckoView belum diuji di perangkat.
+- DataStore Preferences (lokal, tanpa data sensitif, tidak disinkronkan). Koneksi unduhan masih di SharedPreferences.
+- Mesin pencari diteruskan lewat `UrlUtils.currentTemplate` (status global sederhana).
+- Ikon status bar tidak menyesuaikan bila tema dipaksa berbeda dari sistem.
+
+## Stage 7 - Privasi dan keamanan
+
+- Perlindungan pelacak: Enhanced Tracking Protection milik Gecko (Mati/Standar/Ketat) lewat `GeckoRuntimeSettings.contentBlocking`; kebijakan cookie (semua / non-pelacak / isolasi pihak ketiga / pihak pertama); mode HTTPS-only; Global Privacy Control.
+- Pengecualian per situs: daftar host disimpan di DataStore; saat lokasi berubah, `session.settings.useTrackingProtection` disamakan dan halaman dimuat ulang sekali bila berubah. Perilaku ini belum diuji di perangkat.
+- Panel Info situs: host, status HTTPS menurut engine, jumlah sumber daya yang diblokir engine (dari `ContentBlocking.Delegate`, bukan perkiraan), saklar per situs, hapus cookie/data situs untuk domain.
+- Halaman Privasi dan keamanan dipisah dari Pengaturan (belum digabung).
+- Sertifikat TLS tidak valid tidak pernah dilewati; halaman error menjelaskan dan tidak menawarkan bypass.
+- BELUM: pemblokir iklan penuh seperti Brave Shields (hanya daftar bawaan Gecko), UI izin per situs (kamera/mikrofon/lokasi/notifikasi), pembaruan daftar filter kustom, DNS aman. Tidak ada analitik dan tidak ada pengiriman riwayat ke server.
