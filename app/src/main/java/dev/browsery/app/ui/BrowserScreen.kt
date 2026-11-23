@@ -74,13 +74,14 @@ import dev.browsery.app.browser.TabManager
 import dev.browsery.app.browser.TabRecord
 import dev.browsery.app.data.AppDatabase
 import dev.browsery.app.data.BookmarkEntity
+import dev.browsery.app.download.DownloadManager
 import dev.browsery.app.engine.GeckoHost
 import kotlinx.coroutines.launch
 
-enum class Page { Browser, Tabs, Bookmarks, History }
+enum class Page { Browser, Tabs, Bookmarks, History, Downloads }
 
 @Composable
-fun AppRoot(tabs: TabManager, db: AppDatabase) {
+fun AppRoot(tabs: TabManager, db: AppDatabase, downloads: DownloadManager) {
     var page by remember { mutableStateOf(Page.Browser) }
     BackHandler(enabled = page != Page.Browser) { page = Page.Browser }
     when (page) {
@@ -88,6 +89,7 @@ fun AppRoot(tabs: TabManager, db: AppDatabase) {
         Page.Tabs -> TabsPage(tabs, onClose = { page = Page.Browser })
         Page.Bookmarks -> BookmarksPage(db, tabs, onClose = { page = Page.Browser })
         Page.History -> HistoryPage(db, tabs, onClose = { page = Page.Browser })
+        Page.Downloads -> DownloadsPage(downloads, onClose = { page = Page.Browser })
     }
 }
 
@@ -380,12 +382,15 @@ private fun Toolbar(
                     onClick = { menu = false; go(Page.Bookmarks) },
                 )
                 DropdownMenuItem(
+                    text = { Text(stringResource(R.string.dl_menu)) },
+                    onClick = { menu = false; go(Page.Downloads) },
+                )
+                DropdownMenuItem(
                     text = { Text(stringResource(R.string.menu_share)) },
                     onClick = { menu = false; onShare() },
                     enabled = canBookmark,
                 )
                 HorizontalDivider()
-                DropdownMenuItem(text = { Text(stringResource(R.string.menu_downloads)) }, onClick = {}, enabled = false)
                 DropdownMenuItem(text = { Text(stringResource(R.string.menu_find)) }, onClick = {}, enabled = false)
                 DropdownMenuItem(text = { Text(stringResource(R.string.menu_desktop)) }, onClick = {}, enabled = false)
                 DropdownMenuItem(text = { Text(stringResource(R.string.menu_settings)) }, onClick = {}, enabled = false)

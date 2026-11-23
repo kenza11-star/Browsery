@@ -4,16 +4,21 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import dev.browsery.app.BrowseryApp
 import dev.browsery.app.R
+import dev.browsery.app.download.DownloadRequest
+import dev.browsery.app.download.FileNames
 import dev.browsery.app.engine.GeckoRuntimeProvider
 import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.WebRequestError
+import org.mozilla.geckoview.WebResponse
 
 data class BrowserState(
     val url: String = "",
@@ -158,6 +163,10 @@ class BrowserController(context: Context, val isPrivate: Boolean = false) {
             onFullScreenChange?.invoke(fullScreen)
         }
 
+        override fun onExternalResponse(session: GeckoSession, response: WebResponse) {
+            handleDownload(response)
+        }
+
         override fun onCrash(session: GeckoSession) = recover()
 
         override fun onKill(session: GeckoSession) = recover()
@@ -224,6 +233,44 @@ class BrowserController(context: Context, val isPrivate: Boolean = false) {
         lastUrl = url
         state = state.copy(message = null, started = true)
         session.loadUri(url)
+    }
+
+    /**
+     * Respons yang tidak bisa ditampilkan (berkas) diserahkan ke DownloadManager. Tab privat tidak mengunduh
+     * (agar tidak ada jejak). Cookie/otorisasi sesi tidak ikut terbawa ke mesin unduhan (batasan Stage 5).
+     */
+    private fun handleDownload(response: WebResponse) {
+        try {
+            val uri = response.uri
+            val scheme = uri.substringBefore(':', "").lowercase()
+            val headers = response.headers.entries.associate { it.key.lowercase() to it.value }
+            when {
+                isPrivate -> toast(R.string.dl_private_blocked)
+                scheme != "http" && scheme != "https" -> toast(R.string.dl_unsupported_scheme)
+                else -> {
+                    val name = FileNames.sanitize(
+                        FileNames.fromContentDisposition(headers["content-disposition"])
+                            ?: FileNames.fromUrl(uri),
+                    )
+                    val mime = headers["content-type"]?.substringBefore(';')?.trim()?.takeIf { it.isNotEmpty() }
+                    val downloads = (appContext as? BrowseryApp)?.downloads
+                    if (downloads != null) {
+                        downloads.enqueue(DownloadRequest(uri, lastUrl.takeIf { it.startsWith("http") }, name, mime))
+                        Toast.makeText(appContext, appContext.getString(R.string.dl_started, name), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        } finally {
+            try {
+                response.body?.close()
+            } catch (e: Exception) {
+                // sudah ditutup
+            }
+        }
+    }
+
+    private fun toast(res: Int) {
+        Toast.makeText(appContext, res, Toast.LENGTH_LONG).show()
     }
 
     private fun launchExternal(url: String) {
