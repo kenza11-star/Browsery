@@ -13,10 +13,13 @@ import dev.browsery.app.R
 import dev.browsery.app.download.DownloadRequest
 import dev.browsery.app.download.FileNames
 import dev.browsery.app.engine.GeckoRuntimeProvider
+import dev.browsery.app.settings.Hosts
 import org.mozilla.geckoview.AllowOrDeny
+import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSessionSettings
+import org.mozilla.geckoview.StorageController
 import org.mozilla.geckoview.WebRequestError
 import org.mozilla.geckoview.WebResponse
 
@@ -31,6 +34,8 @@ data class BrowserState(
     val isSecure: Boolean = false,
     val isFullScreen: Boolean = false,
     val message: String? = null,
+    /** Jumlah sumber daya yang DIBLOKIR menurut laporan engine pada halaman ini (bukan perkiraan). */
+    val blockedCount: Int = 0,
 ) {
     /** Teks untuk address bar; kosong untuk halaman kosong/halaman error internal. */
     val displayUrl: String
@@ -40,6 +45,8 @@ data class BrowserState(
 
     val isWebUrl: Boolean
         get() = url.startsWith("http://", ignoreCase = true) || url.startsWith("https://", ignoreCase = true)
+
+    val host: String? get() = if (isWebUrl) Uri.parse(url).host else null
 }
 
 /**
@@ -48,6 +55,7 @@ data class BrowserState(
  */
 class BrowserController(context: Context, val isPrivate: Boolean = false) {
     private val appContext = context.applicationContext
+    private val app get() = appContext as? BrowseryApp
 
     val session = GeckoSession(
         GeckoSessionSettings.Builder().usePrivateMode(isPrivate).build(),
@@ -80,6 +88,8 @@ class BrowserController(context: Context, val isPrivate: Boolean = false) {
             if (!shown.startsWith("data:")) lastUrl = shown
             state = state.copy(url = shown, message = null, started = true)
             onChanged?.invoke()
+            // Terapkan pengecualian per situs: bila perlu berubah, muat ulang sekali.
+            if (url != null && state.isWebUrl && syncProtection()) session.reload()
         }
 
         override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) {
@@ -130,7 +140,7 @@ class BrowserController(context: Context, val isPrivate: Boolean = false) {
 
     private val progressDelegate = object : GeckoSession.ProgressDelegate {
         override fun onPageStart(session: GeckoSession, url: String) {
-            state = state.copy(isLoading = true, progress = 0)
+            state = state.copy(isLoading = true, progress = 0, blockedCount = 0)
         }
 
         override fun onPageStop(session: GeckoSession, success: Boolean) {
@@ -172,10 +182,17 @@ class BrowserController(context: Context, val isPrivate: Boolean = false) {
         override fun onKill(session: GeckoSession) = recover()
     }
 
+    private val blockingDelegate = object : ContentBlocking.Delegate {
+        override fun onContentBlocked(session: GeckoSession, event: ContentBlocking.BlockEvent) {
+            if (event.isBlocking) state = state.copy(blockedCount = state.blockedCount + 1)
+        }
+    }
+
     init {
         session.navigationDelegate = navigationDelegate
         session.progressDelegate = progressDelegate
         session.contentDelegate = contentDelegate
+        session.contentBlockingDelegate = blockingDelegate
     }
 
     /** Membuka session (sekali). Tidak memuat apa pun. */
@@ -221,11 +238,44 @@ class BrowserController(context: Context, val isPrivate: Boolean = false) {
         state = state.copy(message = null)
     }
 
+    /** Dipanggil setelah pengecualian situs diubah dari panel info situs: terapkan lalu muat ulang bila berubah. */
+    fun refreshProtection() {
+        if (syncProtection()) session.reload()
+    }
+
+    /** Menghapus cookie dan data situs untuk host halaman saat ini. Hasil dilaporkan lewat [done]. */
+    fun clearSiteData(done: (Boolean) -> Unit) {
+        val host = Hosts.normalize(state.host)
+        if (host == null) {
+            done(false)
+            return
+        }
+        try {
+            val flags = StorageController.ClearFlags.COOKIES or StorageController.ClearFlags.DOM_STORAGES or
+                StorageController.ClearFlags.NETWORK_CACHE or StorageController.ClearFlags.IMAGE_CACHE
+            GeckoRuntimeProvider.get(appContext).storageController.clearDataFromBaseDomain(host, flags).then<Void>(
+                { done(true); null },
+                { done(false); null },
+            )
+        } catch (e: Exception) {
+            done(false)
+        }
+    }
+
     fun close() {
         onFullScreenChange = null
         onChanged = null
         onPageLoaded = null
         if (session.isOpen) session.close()
+    }
+
+    /** Menyamakan tracking protection session dengan pengaturan global + pengecualian situs. True bila berubah. */
+    private fun syncProtection(): Boolean {
+        val settings = app?.settings?.state?.value ?: return false
+        val want = settings.protectionFor(state.host)
+        if (session.settings.useTrackingProtection == want) return false
+        session.settings.useTrackingProtection = want
+        return true
     }
 
     private fun load(url: String) {
@@ -253,7 +303,7 @@ class BrowserController(context: Context, val isPrivate: Boolean = false) {
                             ?: FileNames.fromUrl(uri),
                     )
                     val mime = headers["content-type"]?.substringBefore(';')?.trim()?.takeIf { it.isNotEmpty() }
-                    val downloads = (appContext as? BrowseryApp)?.downloads
+                    val downloads = app?.downloads
                     if (downloads != null) {
                         downloads.enqueue(DownloadRequest(uri, lastUrl.takeIf { it.startsWith("http") }, name, mime))
                         Toast.makeText(appContext, appContext.getString(R.string.dl_started, name), Toast.LENGTH_SHORT).show()

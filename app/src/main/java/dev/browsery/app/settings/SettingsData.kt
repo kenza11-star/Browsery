@@ -25,17 +25,69 @@ enum class ThemeMode(val id: String) {
     }
 }
 
+/** Tingkat Enhanced Tracking Protection milik engine Gecko. */
+enum class TrackingLevel(val id: String) {
+    OFF("off"),
+    STANDARD("standard"),
+    STRICT("strict"),
+    ;
+
+    companion object {
+        fun fromId(id: String?): TrackingLevel = entries.firstOrNull { it.id == id } ?: STANDARD
+    }
+}
+
+/** Kebijakan cookie (hanya opsi yang didukung GeckoView). */
+enum class CookiePolicy(val id: String) {
+    ALL("all"),
+    NON_TRACKERS("non_trackers"),
+    ISOLATE("isolate"),
+    FIRST_PARTY("first_party"),
+    ;
+
+    companion object {
+        fun fromId(id: String?): CookiePolicy = entries.firstOrNull { it.id == id } ?: ISOLATE
+    }
+}
+
+object Hosts {
+    /** Nama host huruf kecil tanpa awalan "www."; null bila kosong. */
+    fun normalize(host: String?): String? {
+        val h = host?.trim()?.lowercase()?.removePrefix("www.")
+        return if (h.isNullOrEmpty()) null else h
+    }
+}
+
 /** Nilai pengaturan (murni, tanpa Android agar mudah diuji). */
 data class SettingsData(
     val searchEngine: SearchEngine = SearchEngine.GOOGLE,
     val customTemplate: String = "",
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val toolbarBottom: Boolean = false,
+    val trackingLevel: TrackingLevel = TrackingLevel.STANDARD,
+    val cookiePolicy: CookiePolicy = CookiePolicy.ISOLATE,
+    val httpsOnly: Boolean = false,
+    val globalPrivacyControl: Boolean = false,
+    /** Situs yang perlindungan pelacaknya dimatikan (host ternormalisasi). */
+    val siteExceptions: Set<String> = emptySet(),
 ) {
     /** Template pencarian efektif. Template kustom yang tidak valid jatuh kembali ke Google. */
     fun searchTemplate(): String = when (searchEngine) {
         SearchEngine.CUSTOM ->
             if (UrlUtils.isValidSearchTemplate(customTemplate)) customTemplate.trim() else SearchEngine.GOOGLE.template
         else -> searchEngine.template
+    }
+
+    fun isExcepted(host: String?): Boolean {
+        val h = Hosts.normalize(host) ?: return false
+        return h in siteExceptions
+    }
+
+    /** Perlindungan pelacak aktif untuk [host] (global menyala dan situs tidak dikecualikan). */
+    fun protectionFor(host: String?): Boolean = trackingLevel != TrackingLevel.OFF && !isExcepted(host)
+
+    fun withException(host: String?, excepted: Boolean): SettingsData {
+        val h = Hosts.normalize(host) ?: return this
+        return copy(siteExceptions = if (excepted) siteExceptions + h else siteExceptions - h)
     }
 }
