@@ -79,7 +79,7 @@ import dev.browsery.app.engine.GeckoHost
 import dev.browsery.app.settings.AppSettings
 import kotlinx.coroutines.launch
 
-enum class Page { Browser, Tabs, Bookmarks, History, Downloads, Settings }
+enum class Page { Browser, Tabs, Bookmarks, History, Downloads, Settings, Privacy }
 
 @Composable
 fun AppRoot(tabs: TabManager, db: AppDatabase, downloads: DownloadManager, settings: AppSettings) {
@@ -87,17 +87,18 @@ fun AppRoot(tabs: TabManager, db: AppDatabase, downloads: DownloadManager, setti
     val s by settings.state.collectAsState()
     BackHandler(enabled = page != Page.Browser) { page = Page.Browser }
     when (page) {
-        Page.Browser -> BrowserPage(tabs, db, bottomBar = s.toolbarBottom, go = { page = it })
+        Page.Browser -> BrowserPage(tabs, db, settings, bottomBar = s.toolbarBottom, go = { page = it })
         Page.Tabs -> TabsPage(tabs, onClose = { page = Page.Browser })
         Page.Bookmarks -> BookmarksPage(db, tabs, onClose = { page = Page.Browser })
         Page.History -> HistoryPage(db, tabs, onClose = { page = Page.Browser })
         Page.Downloads -> DownloadsPage(downloads, onClose = { page = Page.Browser })
         Page.Settings -> SettingsPage(settings, db, downloads, onClose = { page = Page.Browser })
+        Page.Privacy -> PrivacyPage(settings, onClose = { page = Page.Browser })
     }
 }
 
 @Composable
-fun BrowserPage(tabs: TabManager, db: AppDatabase, bottomBar: Boolean, go: (Page) -> Unit) {
+fun BrowserPage(tabs: TabManager, db: AppDatabase, settings: AppSettings, bottomBar: Boolean, go: (Page) -> Unit) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val wide = LocalConfiguration.current.screenWidthDp >= 600
@@ -110,6 +111,7 @@ fun BrowserPage(tabs: TabManager, db: AppDatabase, bottomBar: Boolean, go: (Page
     val url = if (isHome) "" else st?.url.orEmpty()
     val canBookmark = !isHome && st?.isWebUrl == true
     val bookmarked by remember(url) { db.bookmarkDao().isBookmarked(url) }.collectAsState(initial = false)
+    var siteInfo by remember { mutableStateOf(false) }
 
     BackHandler(enabled = fullscreen || (!isHome && st?.canGoBack == true)) {
         if (fullscreen) controller?.exitFullScreen() else controller?.goBack()
@@ -148,6 +150,7 @@ fun BrowserPage(tabs: TabManager, db: AppDatabase, bottomBar: Boolean, go: (Page
                 }
             },
             onShare = { if (canBookmark) sharePage(ctx, url) },
+            onSiteInfo = { if (canBookmark) siteInfo = true },
             go = go,
         )
         if (!bottomBar) ProgressAndMessage(st, isHome, controller)
@@ -171,6 +174,10 @@ fun BrowserPage(tabs: TabManager, db: AppDatabase, bottomBar: Boolean, go: (Page
             }
             if (!fullscreen && bottomBar) chrome()
         }
+    }
+
+    if (siteInfo && controller != null) {
+        SiteInfoDialog(controller, settings, onDismiss = { siteInfo = false })
     }
 }
 
@@ -262,6 +269,7 @@ private fun Toolbar(
     bookmarked: Boolean,
     onToggleBookmark: () -> Unit,
     onShare: () -> Unit,
+    onSiteInfo: () -> Unit,
     go: (Page) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
@@ -304,8 +312,9 @@ private fun Toolbar(
                 when {
                     shownUrl.isEmpty() -> Icon(Icons.Filled.Search, contentDescription = null)
                     st != null && st.isSecure && !st.isHttp ->
-                        Icon(Icons.Filled.Lock, stringResource(R.string.secure_connection))
-                    else -> Icon(Icons.Filled.Warning, stringResource(R.string.not_secure))
+                        IconButton(onClick = onSiteInfo) { Icon(Icons.Filled.Lock, stringResource(R.string.menu_site_info)) }
+                    else ->
+                        IconButton(onClick = onSiteInfo) { Icon(Icons.Filled.Warning, stringResource(R.string.not_secure)) }
                 }
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
@@ -405,9 +414,18 @@ private fun Toolbar(
                     onClick = { menu = false; onShare() },
                     enabled = canBookmark,
                 )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.menu_site_info)) },
+                    onClick = { menu = false; onSiteInfo() },
+                    enabled = canBookmark,
+                )
                 HorizontalDivider()
                 DropdownMenuItem(text = { Text(stringResource(R.string.menu_find)) }, onClick = {}, enabled = false)
                 DropdownMenuItem(text = { Text(stringResource(R.string.menu_desktop)) }, onClick = {}, enabled = false)
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.menu_privacy)) },
+                    onClick = { menu = false; go(Page.Privacy) },
+                )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.settings_title)) },
                     onClick = { menu = false; go(Page.Settings) },
