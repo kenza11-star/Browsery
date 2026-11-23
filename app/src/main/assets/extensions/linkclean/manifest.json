@@ -1,0 +1,18 @@
+{
+  "manifest_version": 2,
+  "name": "Pembersih Tautan Browsery",
+  "version": "1.0.0",
+  "description": "Menghapus parameter pelacak (utm_*, fbclid, gclid, dll.) dari tautan di halaman.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "linkclean@browsery.dev"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["clean.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

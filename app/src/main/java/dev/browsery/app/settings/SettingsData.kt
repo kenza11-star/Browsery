@@ -70,6 +70,10 @@ data class SettingsData(
     val globalPrivacyControl: Boolean = false,
     /** Situs yang perlindungan pelacaknya dimatikan (host ternormalisasi). */
     val siteExceptions: Set<String> = emptySet(),
+    /** ID ekstensi bawaan yang disetujui pengguna untuk dipasang. */
+    val extensionsEnabled: Set<String> = emptySet(),
+    /** ID ekstensi yang diizinkan pengguna berjalan di tab privat. */
+    val extensionsPrivate: Set<String> = emptySet(),
 ) {
     /** Template pencarian efektif. Template kustom yang tidak valid jatuh kembali ke Google. */
     fun searchTemplate(): String = when (searchEngine) {
@@ -90,4 +94,10 @@ data class SettingsData(
         val h = Hosts.normalize(host) ?: return this
         return copy(siteExceptions = if (excepted) siteExceptions + h else siteExceptions - h)
     }
+
+    fun withExtension(id: String, enabled: Boolean): SettingsData =
+        copy(extensionsEnabled = if (enabled) extensionsEnabled + id else extensionsEnabled - id)
+
+    fun withExtensionPrivate(id: String, allowed: Boolean): SettingsData =
+        copy(extensionsPrivate = if (allowed) extensionsPrivate + id else extensionsPrivate - id)
 }

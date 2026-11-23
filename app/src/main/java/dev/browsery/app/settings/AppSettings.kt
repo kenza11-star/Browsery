@@ -37,6 +37,8 @@ class AppSettings(context: Context) {
     private val kHttpsOnly = booleanPreferencesKey("https_only")
     private val kGpc = booleanPreferencesKey("gpc")
     private val kExceptions = stringSetPreferencesKey("site_exceptions")
+    private val kExtEnabled = stringSetPreferencesKey("extensions_enabled")
+    private val kExtPrivate = stringSetPreferencesKey("extensions_private")
 
     private val _state = MutableStateFlow(load())
     val state: StateFlow<SettingsData> = _state
@@ -58,6 +60,8 @@ class AppSettings(context: Context) {
             httpsOnly = p[kHttpsOnly] ?: false,
             globalPrivacyControl = p[kGpc] ?: false,
             siteExceptions = p[kExceptions] ?: emptySet(),
+            extensionsEnabled = p[kExtEnabled] ?: emptySet(),
+            extensionsPrivate = p[kExtPrivate] ?: emptySet(),
         )
     } catch (e: Exception) {
         SettingsData()
@@ -85,6 +89,8 @@ class AppSettings(context: Context) {
                     it[kHttpsOnly] = next.httpsOnly
                     it[kGpc] = next.globalPrivacyControl
                     it[kExceptions] = next.siteExceptions
+                    it[kExtEnabled] = next.extensionsEnabled
+                    it[kExtPrivate] = next.extensionsPrivate
                 }
             } catch (e: Exception) {
                 // Gagal menulis: nilai tetap berlaku selama proses hidup.
@@ -92,5 +98,8 @@ class AppSettings(context: Context) {
         }
     }
 
-    fun reset() = update { SettingsData() }
+    /** Mengembalikan pengaturan ke nilai awal. Pilihan ekstensi (persetujuan pengguna) dipertahankan. */
+    fun reset() = update {
+        SettingsData(extensionsEnabled = it.extensionsEnabled, extensionsPrivate = it.extensionsPrivate)
+    }
 }
