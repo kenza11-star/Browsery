@@ -23,18 +23,19 @@ class SyncManager(context: Context, private val db: AppDatabase, private val aut
     private val client = SyncClient()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    var enabled: Boolean by mutableStateOf(prefs.getBoolean("bookmarks", false))
-        private set
-    var busy: Boolean by mutableStateOf(false)
-        private set
-    var status: String? by mutableStateOf(null)
-        private set
-    var lastSyncMs: Long by mutableLongStateOf(prefs.getLong("last", 0L))
-        private set
+    private var enabledState: Boolean by mutableStateOf(prefs.getBoolean("bookmarks", false))
+    private var busyState: Boolean by mutableStateOf(false)
+    private var statusState: String? by mutableStateOf(null)
+    private var lastState: Long by mutableLongStateOf(prefs.getLong("last", 0L))
+
+    val enabled: Boolean get() = enabledState
+    val busy: Boolean get() = busyState
+    val status: String? get() = statusState
+    val lastSyncMs: Long get() = lastState
 
     fun setEnabled(value: Boolean) {
         prefs.edit().putBoolean("bookmarks", value).apply()
-        enabled = value
+        enabledState = value
         if (value) syncNow()
     }
 
@@ -47,9 +48,9 @@ class SyncManager(context: Context, private val db: AppDatabase, private val aut
     }
 
     fun syncNow() {
-        if (busy || !enabled) return
-        busy = true
-        status = null
+        if (busyState || !enabledState) return
+        busyState = true
+        statusState = null
         scope.launch {
             try {
                 val token = auth.accessToken() ?: throw SyncException("Belum masuk.")
@@ -63,15 +64,15 @@ class SyncManager(context: Context, private val db: AppDatabase, private val aut
                     }
                     client.pushBookmarks(token, plan.toPush)
                 }
-                lastSyncMs = System.currentTimeMillis()
-                prefs.edit().putLong("last", lastSyncMs).apply()
-                status = "Selesai: ${plan.toPull.size} diunduh, ${plan.toPush.size} diunggah."
+                lastState = System.currentTimeMillis()
+                prefs.edit().putLong("last", lastState).apply()
+                statusState = "Selesai: ${plan.toPull.size} diunduh, ${plan.toPush.size} diunggah."
             } catch (e: SyncException) {
-                status = e.message
+                statusState = e.message
             } catch (e: Exception) {
-                status = "Sinkronisasi gagal."
+                statusState = "Sinkronisasi gagal."
             } finally {
-                busy = false
+                busyState = false
             }
         }
     }
