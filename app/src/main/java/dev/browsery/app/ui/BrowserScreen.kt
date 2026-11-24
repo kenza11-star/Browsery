@@ -73,6 +73,8 @@ import dev.browsery.app.browser.BrowserController
 import dev.browsery.app.browser.BrowserState
 import dev.browsery.app.browser.TabManager
 import dev.browsery.app.browser.TabRecord
+import dev.browsery.app.browser.isDesktop
+import dev.browsery.app.browser.setDesktop
 import dev.browsery.app.data.AppDatabase
 import dev.browsery.app.data.BookmarkEntity
 import dev.browsery.app.download.DownloadManager
@@ -123,6 +125,8 @@ fun BrowserPage(tabs: TabManager, db: AppDatabase, settings: AppSettings, bottom
     val canBookmark = !isHome && st?.isWebUrl == true
     val bookmarked by remember(url) { db.bookmarkDao().isBookmarked(url) }.collectAsState(initial = false)
     var siteInfo by remember { mutableStateOf(false) }
+    var findOpen by remember(active?.id) { mutableStateOf(false) }
+    var desktopOn by remember(active?.id) { mutableStateOf(controller?.isDesktop() == true) }
 
     BackHandler(enabled = fullscreen || (!isHome && st?.canGoBack == true)) {
         if (fullscreen) controller?.exitFullScreen() else controller?.goBack()
@@ -143,6 +147,7 @@ fun BrowserPage(tabs: TabManager, db: AppDatabase, settings: AppSettings, bottom
             isHome = isHome,
             canBookmark = canBookmark,
             bookmarked = bookmarked,
+            desktop = desktopOn,
             onToggleBookmark = {
                 if (canBookmark) {
                     scope.launch {
@@ -162,6 +167,14 @@ fun BrowserPage(tabs: TabManager, db: AppDatabase, settings: AppSettings, bottom
             },
             onShare = { if (canBookmark) sharePage(ctx, url) },
             onSiteInfo = { if (canBookmark) siteInfo = true },
+            onFind = { if (canBookmark) findOpen = true },
+            onDesktop = {
+                if (canBookmark && controller != null) {
+                    val next = !desktopOn
+                    controller.setDesktop(next)
+                    desktopOn = next
+                }
+            },
             go = go,
         )
         if (!bottomBar) ProgressAndMessage(st, isHome, controller)
@@ -174,6 +187,9 @@ fun BrowserPage(tabs: TabManager, db: AppDatabase, settings: AppSettings, bottom
                 .then(if (fullscreen) Modifier else Modifier.safeDrawingPadding()),
         ) {
             if (!fullscreen && !bottomBar) chrome()
+            if (!fullscreen && findOpen && controller != null && !isHome) {
+                key(active?.id) { FindBar(controller, onClose = { findOpen = false }) }
+            }
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 if (isHome || controller == null || active == null) {
                     HomePage(tabs, db)
@@ -278,9 +294,12 @@ private fun Toolbar(
     isHome: Boolean,
     canBookmark: Boolean,
     bookmarked: Boolean,
+    desktop: Boolean,
     onToggleBookmark: () -> Unit,
     onShare: () -> Unit,
     onSiteInfo: () -> Unit,
+    onFind: () -> Unit,
+    onDesktop: () -> Unit,
     go: (Page) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
@@ -431,8 +450,16 @@ private fun Toolbar(
                     enabled = canBookmark,
                 )
                 HorizontalDivider()
-                DropdownMenuItem(text = { Text(stringResource(R.string.menu_find)) }, onClick = {}, enabled = false)
-                DropdownMenuItem(text = { Text(stringResource(R.string.menu_desktop)) }, onClick = {}, enabled = false)
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.menu_find)) },
+                    onClick = { menu = false; onFind() },
+                    enabled = canBookmark,
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(if (desktop) R.string.menu_mobile else R.string.menu_desktop)) },
+                    onClick = { menu = false; onDesktop() },
+                    enabled = canBookmark,
+                )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.menu_extensions)) },
                     onClick = { menu = false; go(Page.Extensions) },
