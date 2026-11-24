@@ -2,105 +2,175 @@ package dev.browsery.app.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.browsery.app.R
 import dev.browsery.app.browser.TabManager
 
+/** Pengalih tab ala Chrome: grid dua kolom, pencarian tab, pemisah tab biasa/privat. Tanpa gambar mini halaman. */
 @Composable
 fun TabsPage(tabs: TabManager, onClose: () -> Unit) {
     val s = tabs.state
+    var showPrivate by remember { mutableStateOf(s.active?.isPrivate == true) }
+    var query by remember { mutableStateOf("") }
+    val q = query.trim()
+    val visible = s.tabs.filter { rec ->
+        rec.isPrivate == showPrivate &&
+            (q.isEmpty() ||
+                tabs.displayTitle(rec).contains(q, ignoreCase = true) ||
+                tabs.displayUrl(rec).contains(q, ignoreCase = true))
+    }
+
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
-            PageHeader(
-                title = stringResource(R.string.tabs_title) + " (" + s.tabs.size + ")",
-                onBack = onClose,
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                IconButton(onClick = onClose) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
+                }
+                FilledTonalIconButton(onClick = { tabs.newTab(showPrivate); onClose() }) {
+                    Icon(Icons.Filled.Add, stringResource(if (showPrivate) R.string.menu_new_private else R.string.menu_new_tab))
+                }
+                FilterChip(
+                    selected = !showPrivate,
+                    onClick = { showPrivate = false },
+                    label = { Text(stringResource(R.string.tabs_normal)) },
+                )
+                FilterChip(
+                    selected = showPrivate,
+                    onClick = { showPrivate = true },
+                    label = { Text(stringResource(R.string.private_label)) },
+                )
+                Box(modifier = Modifier.weight(1f))
                 TextButton(onClick = { tabs.reopenClosed(); onClose() }, enabled = s.closed.isNotEmpty()) {
                     Text(stringResource(R.string.tabs_reopen))
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                TextButton(onClick = { tabs.newTab(false); onClose() }) { Text(stringResource(R.string.menu_new_tab)) }
-                TextButton(onClick = { tabs.newTab(true); onClose() }) { Text(stringResource(R.string.menu_new_private)) }
+            TextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                singleLine = true,
+                shape = RoundedCornerShape(24.dp),
+                placeholder = { Text(stringResource(R.string.tabs_search)) },
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                    errorIndicatorColor = Color.Transparent,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                ),
+            )
+            if (visible.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(stringResource(R.string.tabs_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(160.dp),
+                columns = GridCells.Adaptive(150.dp),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                items(s.tabs, key = { it.id }) { rec ->
+                items(visible, key = { it.id }) { rec ->
                     val isActive = rec.id == s.activeId
+                    val title = tabs.displayTitle(rec).ifBlank { stringResource(R.string.new_tab_title) }
+                    val url = tabs.displayUrl(rec)
                     Card(
                         onClick = { tabs.select(rec.id); onClose() },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isActive) {
+                                MaterialTheme.colorScheme.secondaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surfaceContainerHigh
+                            },
+                        ),
                         border = if (isActive) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Row(verticalAlignment = Alignment.Top) {
+                        Column {
+                            Row(
+                                modifier = Modifier.padding(start = 12.dp, top = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
                                 Text(
-                                    text = tabs.displayTitle(rec).ifBlank { stringResource(R.string.new_tab_title) },
-                                    style = MaterialTheme.typography.titleSmall,
-                                    maxLines = 2,
+                                    text = title,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f),
                                 )
-                                IconButton(onClick = { tabs.closeTab(rec.id) }, modifier = Modifier.size(32.dp)) {
+                                IconButton(onClick = { tabs.closeTab(rec.id) }, modifier = Modifier.size(36.dp)) {
                                     Icon(Icons.Filled.Close, stringResource(R.string.close_tab), modifier = Modifier.size(18.dp))
                                 }
                             }
-                            Text(
-                                text = tabs.displayUrl(rec),
-                                style = MaterialTheme.typography.labelSmall,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (rec.isPrivate) {
-                                    Text(
-                                        stringResource(R.string.private_label),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.tertiary,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                } else {
-                                    Text("", modifier = Modifier.weight(1f))
-                                }
-                                IconButton(onClick = { tabs.moveTab(rec.id, -1) }, modifier = Modifier.size(32.dp)) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.move_earlier), modifier = Modifier.size(18.dp))
-                                }
-                                IconButton(onClick = { tabs.moveTab(rec.id, 1) }, modifier = Modifier.size(32.dp)) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowForward, stringResource(R.string.move_later), modifier = Modifier.size(18.dp))
+                            Box(
+                                modifier = Modifier.fillMaxWidth().height(96.dp).padding(horizontal = 8.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = url.removePrefix("https://").removePrefix("http://").removePrefix("www.").trimEnd('/'),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 3,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            if (isActive) {
+                                Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                                    IconButton(onClick = { tabs.moveTab(rec.id, -1) }, modifier = Modifier.size(32.dp)) {
+                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.move_earlier), modifier = Modifier.size(16.dp))
+                                    }
+                                    IconButton(onClick = { tabs.moveTab(rec.id, 1) }, modifier = Modifier.size(32.dp)) {
+                                        Icon(Icons.AutoMirrored.Filled.ArrowForward, stringResource(R.string.move_later), modifier = Modifier.size(16.dp))
+                                    }
                                 }
                             }
                         }

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tabs_search">Telusuri tab Anda</string>
+    <string name="tabs_normal">Tab</string>
+    <string name="tabs_empty">Tidak ada tab</string>
+    <string name="sug_search_for">Telusuri %1$s</string>
+    <string name="clear_text">Hapus teks</string>
+</resources>
