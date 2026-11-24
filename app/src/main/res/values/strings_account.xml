@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_account">Akun</string>
+    <string name="acc_title">Akun</string>
+    <string name="acc_email">Email</string>
+    <string name="acc_password">Kata sandi (min. 8 karakter)</string>
+    <string name="acc_sign_in">Masuk</string>
+    <string name="acc_sign_up">Daftar</string>
+    <string name="acc_sign_out">Keluar</string>
+    <string name="acc_google">Masuk dengan Google (lewat browser lain)</string>
+    <string name="acc_signed_in_as">Masuk sebagai</string>
+    <string name="acc_sync_not_yet">Sinkronisasi cloud belum tersedia di versi ini; akun hanya untuk masuk.</string>
+    <string name="acc_limits">Akun bersifat opsional; browser berfungsi penuh tanpa masuk. Sesi disimpan terenkripsi di perangkat, kata sandi tidak disimpan. Masuk Google memerlukan penyedia Google diaktifkan di dasbor Supabase dan browsery://auth-callback terdaftar sebagai Redirect URL; ini membuka browser lain di perangkat dan belum diuji.</string>
+</resources>
