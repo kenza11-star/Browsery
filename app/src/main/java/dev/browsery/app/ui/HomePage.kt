@@ -14,17 +14,16 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,46 +49,32 @@ import dev.browsery.app.data.AppDatabase
 import dev.browsery.app.data.ShortcutEntity
 import kotlinx.coroutines.launch
 
-/** Halaman tab baru: kolom pencarian dan pintasan yang dibuat dan dikelola sendiri oleh pengguna (awalnya kosong). */
+/** Tab baru: nama aplikasi dan pintasan buatan pengguna (awalnya kosong). Pencarian lewat kolom alamat di atas. */
 @Composable
 fun HomePage(tabs: TabManager, db: AppDatabase) {
     val scope = rememberCoroutineScope()
     val shortcuts by remember { db.shortcutDao().observeAll() }.collectAsState(initial = emptyList<ShortcutEntity>())
-    var query by remember { mutableStateOf("") }
     var editing by remember { mutableStateOf<ShortcutEntity?>(null) }
     var adding by remember { mutableStateOf(false) }
 
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(96.dp),
+        columns = GridCells.Adaptive(84.dp),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineMedium)
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                    singleLine = true,
-                    placeholder = { Text(stringResource(R.string.address_hint)) },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
-                    keyboardActions = KeyboardActions(onGo = { tabs.navigate(query) }),
+                Text(
+                    stringResource(R.string.home_title),
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
-        }
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Text(
-                stringResource(R.string.home_shortcuts),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 8.dp),
-            )
         }
         items(shortcuts, key = { it.id }) { sc ->
             Column(
@@ -100,14 +84,14 @@ fun HomePage(tabs: TabManager, db: AppDatabase) {
                     .padding(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .then(Modifier),
-                    contentAlignment = Alignment.Center,
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = CircleShape,
+                    modifier = Modifier.size(56.dp),
                 ) {
-                    Surface48(sc.title)
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(sc.title.trim().take(1).uppercase(), style = MaterialTheme.typography.titleLarge)
+                    }
                 }
                 Text(
                     sc.title,
@@ -115,9 +99,10 @@ fun HomePage(tabs: TabManager, db: AppDatabase) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
-                IconButton(onClick = { editing = sc }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Filled.Edit, stringResource(R.string.shortcut_edit), modifier = Modifier.size(16.dp))
+                IconButton(onClick = { editing = sc }, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Filled.Edit, stringResource(R.string.shortcut_edit), modifier = Modifier.size(14.dp))
                 }
             }
         }
@@ -129,13 +114,20 @@ fun HomePage(tabs: TabManager, db: AppDatabase) {
                     .padding(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.Add, stringResource(R.string.shortcut_add))
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = CircleShape,
+                    modifier = Modifier.size(56.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Add, stringResource(R.string.shortcut_add))
+                    }
                 }
                 Text(
                     stringResource(R.string.shortcut_add),
                     style = MaterialTheme.typography.labelMedium,
                     textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }
@@ -166,23 +158,6 @@ fun HomePage(tabs: TabManager, db: AppDatabase) {
                 editing = null
             },
         )
-    }
-}
-
-@Composable
-private fun Surface48(title: String) {
-    androidx.compose.material3.Surface(
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shape = CircleShape,
-        modifier = Modifier.size(48.dp),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                title.trim().take(1).uppercase(),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
-        }
     }
 }
 
