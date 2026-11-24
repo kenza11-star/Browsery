@@ -15,6 +15,9 @@ import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import dev.browsery.app.auth.AuthLinks
+import dev.browsery.app.auth.AuthManager
+import dev.browsery.app.auth.SupabaseConfig
 import dev.browsery.app.browser.TabManager
 import dev.browsery.app.data.AppDatabase
 import dev.browsery.app.download.DownloadManager
@@ -29,6 +32,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var downloads: DownloadManager
     private lateinit var settings: AppSettings
     private lateinit var extensions: ExtensionManager
+    private lateinit var auth: AuthManager
 
     private val notificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* unduhan tetap berjalan tanpa notifikasi */ }
@@ -41,6 +45,7 @@ class MainActivity : ComponentActivity() {
         settings = app.settings
         downloads = app.downloads
         extensions = app.extensions
+        auth = app.auth
         downloads.onFirstEnqueue = ::askNotificationPermission
         downloads.start()
         tabs = TabManager(applicationContext, db)
@@ -60,7 +65,7 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.DARK -> true
             }
             BrowseryTheme(darkTheme = dark) {
-                AppRoot(tabs, db, downloads, settings, extensions)
+                AppRoot(tabs, db, downloads, settings, extensions, auth)
             }
         }
         // Hindari membuka ulang tautan yang sama saat Activity dibuat ulang.
@@ -80,13 +85,17 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    /** Hanya tautan http/https yang diterima (dari VIEW atau teks yang dibagikan); skema lain diabaikan. */
+    /** Tautan http/https (VIEW atau teks dibagikan) dibuka sebagai tab; callback login browsery:// diteruskan ke AuthManager. */
     private fun handleIntent(intent: Intent?) {
         when (intent?.action) {
             Intent.ACTION_VIEW -> {
                 val data = intent.data ?: return
                 val scheme = data.scheme?.lowercase()
-                if (scheme == "http" || scheme == "https") tabs.openExternal(data.toString())
+                if (scheme == "http" || scheme == "https") {
+                    tabs.openExternal(data.toString())
+                } else if (scheme == "browsery" && AuthLinks.isCallback(data.toString(), SupabaseConfig.REDIRECT)) {
+                    auth.handleCallback(data.toString())
+                }
             }
             Intent.ACTION_SEND -> {
                 val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
