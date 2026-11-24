@@ -20,12 +20,13 @@ import kotlinx.coroutines.launch
 /**
  * Mengelola banyak tab. Setiap tab yang SUDAH dipakai punya satu [BrowserController] (GeckoSession).
  * Tab baru kosong tidak membuat session (menghemat RAM) sampai pengguna menavigasi.
- * Tab normal latar belakang dibatasi [MAX_LOADED]; yang melebihi batas dilepas dan dimuat ulang
- * dari URL terakhir saat dipilih (posisi scroll/form tidak dipertahankan).
+ * Tab normal latar belakang dibatasi [maxLoaded] (menurut memori perangkat, lihat [TabLimits]); yang melebihi
+ * batas dilepas dan dimuat ulang dari URL terakhir saat dipilih (posisi scroll/form tidak dipertahankan).
  */
 class TabManager(context: Context, private val db: AppDatabase) {
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val maxLoaded = TabLimits.forDevice(appContext)
 
     var state by mutableStateOf(TabsState())
         private set
@@ -151,7 +152,7 @@ class TabManager(context: Context, private val db: AppDatabase) {
 
     /** Melepas session tab normal terlama di latar belakang bila melebihi batas. Tab privat tidak dilepas. */
     private fun enforceLimit(keep: String) {
-        while (controllers.size > MAX_LOADED) {
+        while (controllers.size > maxLoaded) {
             val victim = state.tabs.firstOrNull { it.id != keep && !it.isPrivate && controllers.containsKey(it.id) }
                 ?: return
             syncRecords()
@@ -195,9 +196,5 @@ class TabManager(context: Context, private val db: AppDatabase) {
             val snapshot = buildSnapshot()
             runCatching { db.savedTabDao().replaceAll(snapshot) }
         }
-    }
-
-    companion object {
-        const val MAX_LOADED = 6
     }
 }
