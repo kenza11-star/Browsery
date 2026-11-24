@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_extensions">Ekstensi</string>
+    <string name="ext_title">Ekstensi</string>
+    <string name="ext_intro">Hanya ekstensi bawaan yang dikemas di dalam Browsery yang dapat dipasang. Ekstensi tidak dipasang sebelum Anda menyetujuinya.</string>
+
+    <string name="ext_status_not_installed">Belum dipasang</string>
+    <string name="ext_status_enabled">Aktif · versi %1$s</string>
+    <string name="ext_status_disabled">Dinonaktifkan · versi %1$s</string>
+    <string name="ext_status_error">Kesalahan: %1$s</string>
+
+    <string name="ext_install">Pasang dan aktifkan</string>
+    <string name="ext_remove">Hapus</string>
+    <string name="ext_active">Aktif</string>
+    <string name="ext_private">Izinkan di tab privat</string>
+    <string name="ext_private_desc">Ekstensi akan dapat melihat halaman yang Anda buka di tab privat. Aktifkan hanya bila Anda mempercayainya.</string>
+    <string name="ext_permissions">Izin yang diberikan</string>
+    <string name="ext_no_permissions">Tidak ada izin API tambahan.</string>
+    <string name="ext_sites">Akses situs: %1$s</string>
+
+    <string name="ext_consent_title">Pasang %1$s?</string>
+    <string name="ext_consent_sites">Ekstensi ini meminta akses ke: %1$s</string>
+    <string name="ext_consent_confirm">Setuju dan pasang</string>
+    <string name="ext_private_consent_title">Jalankan di tab privat?</string>
+
+    <string name="ext_limits_title">Batasan</string>
+    <string name="ext_limits">Tidak didukung: pemasangan dari Chrome Web Store, Firefox Add-ons, berkas, atau tautan pihak ketiga, karena sumbernya belum dapat diverifikasi dengan aman. Tidak semua ekstensi kompatibel dengan GeckoView. Ekstensi yang dipasang tidak mendapat tombol bilah alat atau halaman opsi. Kesalahan satu ekstensi tidak menghentikan aplikasi, hanya ditampilkan sebagai status.</string>
+</resources>

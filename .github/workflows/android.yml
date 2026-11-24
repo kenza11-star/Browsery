@@ -1,0 +1,84 @@
+name: Android CI
+
+on:
+  push:
+    branches: [main, "stage-*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # Runner ubuntu-latest sudah membawa Android SDK (ANDROID_HOME). Cukup terima lisensi.
+      - name: Accept Android SDK licenses
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Setup Gradle 9.3.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.3.1"
+
+      - name: Unit test
+        run: |
+          set -o pipefail
+          gradle :app:testDebugUnitTest --stacktrace 2>&1 | tee "$RUNNER_TEMP/unit.log"
+
+      - name: Assemble debug APK
+        run: |
+          set -o pipefail
+          gradle :app:assembleDebug --stacktrace 2>&1 | tee "$RUNNER_TEMP/assemble.log"
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: browsery-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Lint
+        run: |
+          set -o pipefail
+          gradle :app:lintDebug --stacktrace 2>&1 | tee "$RUNNER_TEMP/lint.log"
+
+      # Ringkasan error sebagai annotation (satu baris per annotation) agar terbaca lewat API check-run.
+      - name: Summarize failures
+        if: failure()
+        run: |
+          for f in unit assemble lint; do
+            log="$RUNNER_TEMP/$f.log"
+            [ -f "$log" ] || continue
+            { sed -n '/What went wrong/,/\* Try/p' "$log" | head -14; grep -E "^e: |^w: .*\.kt|Error:|error:" "$log" | head -12; } \
+              | cut -c1-400 | tr -d '\r' | sed 's/%/%25/g' | while IFS= read -r line; do
+                [ -n "$line" ] && echo "::error title=$f::$line"
+              done
+          done
+          exit 0
+
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: |
+            app/build/reports/lint-results-debug.*
+            app/build/reports/tests/
+          if-no-files-found: ignore

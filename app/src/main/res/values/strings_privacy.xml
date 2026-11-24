@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_privacy">Privasi dan keamanan</string>
+    <string name="menu_site_info">Info situs</string>
+
+    <string name="privacy_title">Privasi dan keamanan</string>
+    <string name="privacy_tracking">Perlindungan pelacak</string>
+    <string name="privacy_tracking_desc">Memakai daftar pemblokir bawaan mesin Gecko (Enhanced Tracking Protection). Ini bukan jaminan: sebagian pelacak tetap lolos, dan mode Ketat dapat merusak beberapa situs.</string>
+    <string name="tracking_off">Mati</string>
+    <string name="tracking_standard">Standar</string>
+    <string name="tracking_strict">Ketat</string>
+
+    <string name="privacy_cookies">Kebijakan cookie</string>
+    <string name="privacy_cookies_desc">Hanya opsi yang didukung engine. Memblokir cookie pihak ketiga dapat membuat sebagian login atau komentar tertanam gagal.</string>
+    <string name="cookie_all">Terima semua</string>
+    <string name="cookie_non_trackers">Blokir cookie pelacak</string>
+    <string name="cookie_isolate">Isolasi pihak ketiga</string>
+    <string name="cookie_first_party">Hanya pihak pertama</string>
+
+    <string name="privacy_https_only">Mode HTTPS-only</string>
+    <string name="privacy_https_only_desc">Menolak membuka situs yang hanya menyediakan http. Situs lama mungkin tidak bisa dibuka.</string>
+    <string name="privacy_gpc">Sinyal Global Privacy Control</string>
+    <string name="privacy_gpc_desc">Mengirim sinyal ke situs bahwa Anda tidak ingin data dijual atau dibagikan. Situs tidak wajib mematuhinya. Selalu aktif di tab privat.</string>
+
+    <string name="privacy_exceptions">Situs dengan perlindungan dimatikan</string>
+    <string name="privacy_exceptions_empty">Belum ada pengecualian. Buka Menu &gt; Info situs untuk mematikan perlindungan di situs yang rusak.</string>
+    <string name="privacy_remove">Hapus</string>
+
+    <string name="privacy_limits_title">Batasan</string>
+    <string name="privacy_limits">Tidak ada jaminan keamanan mutlak. Pemblokiran iklan penuh seperti Brave Shields (daftar filter khusus, kosmetik) belum ada; yang aktif hanyalah daftar bawaan Gecko. Sertifikat tidak valid tidak pernah dilewati otomatis. Konten campuran dan izin situs mengikuti perilaku bawaan Gecko; antarmuka izin per situs belum ada. Tidak ada analitik atau pengiriman riwayat ke server.</string>
+
+    <string name="site_title">Info situs</string>
+    <string name="site_host">Situs: %1$s</string>
+    <string name="site_secure">Sambungan: HTTPS</string>
+    <string name="site_insecure">Sambungan: tidak terenkripsi (http) atau tidak terverifikasi</string>
+    <string name="site_blocked">Diblokir engine di halaman ini: %1$d</string>
+    <string name="site_protection">Perlindungan pelacak untuk situs ini</string>
+    <string name="site_protection_global_off">Perlindungan pelacak global sedang mati.</string>
+    <string name="site_clear">Hapus cookie dan data situs ini</string>
+    <string name="site_cleared">Data situs dihapus. Muat ulang halaman.</string>
+    <string name="site_clear_failed">Gagal menghapus data situs.</string>
+    <string name="site_close">Tutup</string>
+</resources>
