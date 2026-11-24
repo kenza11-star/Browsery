@@ -68,6 +68,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.browsery.app.R
+import dev.browsery.app.auth.AuthManager
 import dev.browsery.app.browser.BrowserController
 import dev.browsery.app.browser.BrowserState
 import dev.browsery.app.browser.TabManager
@@ -80,7 +81,7 @@ import dev.browsery.app.extensions.ExtensionManager
 import dev.browsery.app.settings.AppSettings
 import kotlinx.coroutines.launch
 
-enum class Page { Browser, Tabs, Bookmarks, History, Downloads, Settings, Privacy, Extensions }
+enum class Page { Browser, Tabs, Bookmarks, History, Downloads, Settings, Privacy, Extensions, Account }
 
 @Composable
 fun AppRoot(
@@ -89,6 +90,7 @@ fun AppRoot(
     downloads: DownloadManager,
     settings: AppSettings,
     extensions: ExtensionManager,
+    auth: AuthManager,
 ) {
     var page by remember { mutableStateOf(Page.Browser) }
     val s by settings.state.collectAsState()
@@ -102,6 +104,7 @@ fun AppRoot(
         Page.Settings -> SettingsPage(settings, db, downloads, onClose = { page = Page.Browser })
         Page.Privacy -> PrivacyPage(settings, onClose = { page = Page.Browser })
         Page.Extensions -> ExtensionsPage(extensions, onClose = { page = Page.Browser })
+        Page.Account -> AccountPage(auth, onClose = { page = Page.Browser })
     }
 }
 
@@ -433,6 +436,10 @@ private fun Toolbar(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.menu_extensions)) },
                     onClick = { menu = false; go(Page.Extensions) },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.menu_account)) },
+                    onClick = { menu = false; go(Page.Account) },
                 )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.menu_privacy)) },
