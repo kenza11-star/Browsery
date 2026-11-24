@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="find_hint">Cari di halaman</string>
+    <string name="find_prev">Sebelumnya</string>
+    <string name="find_next">Berikutnya</string>
+    <string name="find_close">Tutup pencarian</string>
+    <string name="find_none">Tidak ada hasil</string>
+    <string name="menu_mobile">Situs seluler</string>
+</resources>
