@@ -13,8 +13,8 @@ android {
         applicationId = "dev.browsery.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.4.0"
+        versionCode = 4
+        versionName = "0.5.0"
 
         // Hanya arm64-v8a (sesuai artefak GeckoView yang dipakai).
         ndk {
@@ -22,9 +22,25 @@ android {
         }
     }
 
+    // Penandatanganan rilis: HANYA dari environment (diisi GitHub Secrets saat CI rilis).
+    // Tidak ada keystore/kata sandi di repo. Tanpa environment ini, rilis tidak ditandatangani.
+    val releaseKeystore: String? = System.getenv("BROWSERY_KEYSTORE_PATH")
+    signingConfigs {
+        if (!releaseKeystore.isNullOrBlank()) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("BROWSERY_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("BROWSERY_KEY_ALIAS")
+                keyPassword = System.getenv("BROWSERY_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // R8 belum diuji bersama GeckoView; sengaja dimatikan sampai ada uji perangkat.
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 
