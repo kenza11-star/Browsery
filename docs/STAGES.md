@@ -15,9 +15,9 @@ Status jujur per stage. "VERIFIED build" = CI hijau (unit test, assembleDebug, l
 | 9 | Akun Supabase + Google | IMPLEMENTED (email/kata sandi + Google lewat browser lain); build hijau `9c408ae` (job 138262036117). Login belum diuji terhadap server asli dari aplikasi. |
 | 10 | Sinkronisasi cloud | IMPLEMENTED terbatas (hanya bookmark, aditif, opt-in); build hijau `aa16d1a` (job 138267476876); merge diuji unit. |
 | 11 | Fitur lanjutan | PARTIAL: Cari di halaman + Situs desktop; build hijau `abfb188` (job 138270812587). |
-| 12 | Performa lintas perangkat | TIDAK dikerjakan (tidak ada pengukuran, tidak ada layout tablet khusus selain tab strip lebar). |
-| 13 | Pipeline rilis | PARTIAL: konfigurasi penandatanganan dari env di `app/build.gradle.kts`; workflow rilis HANYA berupa `docs/release.yml.example` karena konektor menolak menulis `.github/workflows`. Belum pernah dijalankan; tidak ada APK bertanda tangan. |
-| 14 | Regresi penuh + serah terima | PARTIAL: dokumen ini dan `HANDOFF.md`; regresi hanya berupa CI unit test/lint, tanpa uji perangkat. |
+| 12 | Performa lintas perangkat | PARTIAL: batas tab termuat menyesuaikan kelas memori perangkat (3/4/6/8, `TabLimits`, diuji unit); build hijau `c35dc8e` (job 138280088299). Tidak ada pengukuran performa, profil baseline, R8, atau uji tablet/foldable. |
+| 13 | Pipeline rilis | PARTIAL: penandatanganan dari environment di `app/build.gradle.kts` (build hijau `462f9ee`); workflow rilis HANYA berupa `docs/release.yml.example` karena konektor menolak menulis `.github/workflows`. Belum pernah dijalankan; tidak ada APK bertanda tangan. |
+| 14 | Regresi penuh + serah terima | PARTIAL: dokumen ini dan `HANDOFF.md`; regresi hanya berupa CI unit test/lint pada `c35dc8e`, tanpa uji perangkat. |
 
 ## Matriks fitur
 
@@ -25,6 +25,7 @@ Status jujur per stage. "VERIFIED build" = CI hijau (unit test, assembleDebug, l
 |---|---|
 | Navigasi, URL/pencarian, error page TLS tanpa bypass | IMPLEMENTED, belum diuji perangkat |
 | Multi-tab, tab privat, restore tab, riwayat, bookmark | IMPLEMENTED, belum diuji perangkat |
+| Batas tab termuat adaptif memori | IMPLEMENTED, rumus diuji unit; efek nyata belum diukur |
 | Unduhan paralel/resume | IMPLEMENTED, diuji unit lokal |
 | Perlindungan pelacak, HTTPS-only, GPC, pengecualian situs | IMPLEMENTED terbatas |
 | Ekstensi bawaan Pembersih Tautan | IMPLEMENTED terbatas |
@@ -48,3 +49,4 @@ Status jujur per stage. "VERIFIED build" = CI hijau (unit test, assembleDebug, l
 - Sinkron: kunci pencocokan URL; tidak ada enkripsi ujung ke ujung; data di server dilindungi RLS per pengguna.
 - Login Google memakai browser lain di perangkat (bukan Credential Manager native).
 - Room schema belum diekspor; migrasi 1 ke 2 belum diuji di perangkat.
+- Tab normal latar belakang di atas batas dilepas dan dimuat ulang dari URL terakhir (scroll/form hilang).
