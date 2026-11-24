@@ -9,6 +9,10 @@
     <string name="acc_sign_out">Keluar</string>
     <string name="acc_google">Masuk dengan Google (lewat browser lain)</string>
     <string name="acc_signed_in_as">Masuk sebagai</string>
-    <string name="acc_sync_not_yet">Sinkronisasi cloud belum tersedia di versi ini; akun hanya untuk masuk.</string>
     <string name="acc_limits">Akun bersifat opsional; browser berfungsi penuh tanpa masuk. Sesi disimpan terenkripsi di perangkat, kata sandi tidak disimpan. Masuk Google memerlukan penyedia Google diaktifkan di dasbor Supabase dan browsery://auth-callback terdaftar sebagai Redirect URL; ini membuka browser lain di perangkat dan belum diuji.</string>
+    <string name="sync_title">Sinkronkan bookmark</string>
+    <string name="sync_consent">Jika diaktifkan, URL dan judul bookmark dikirim ke server Supabase proyek ini (dilindungi aturan akses per pengguna, tidak dienkripsi ujung ke ujung). Riwayat, tab (termasuk tab privat), dan pengaturan TIDAK disinkronkan. Sinkron bersifat penambahan: bookmark yang dihapus belum ikut terhapus di perangkat lain.</string>
+    <string name="sync_now">Sinkronkan sekarang</string>
+    <string name="sync_last">Terakhir berhasil: %1$s</string>
+    <string name="sync_never">Belum pernah sinkron</string>
 </resources>

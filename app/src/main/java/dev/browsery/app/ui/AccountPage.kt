@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -23,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -37,16 +39,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import dev.browsery.app.BrowseryApp
 import dev.browsery.app.MainActivity
 import dev.browsery.app.R
 import dev.browsery.app.auth.AuthLinks
 import dev.browsery.app.auth.AuthManager
 import dev.browsery.app.auth.AuthState
 import dev.browsery.app.auth.SupabaseConfig
+import java.text.DateFormat
+import java.util.Date
 
 @Composable
 fun AccountPage(auth: AuthManager, onClose: () -> Unit) {
     val ctx = LocalContext.current
+    val sync = (ctx.applicationContext as BrowseryApp).sync
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val state = auth.state
@@ -72,8 +78,36 @@ fun AccountPage(auth: AuthManager, onClose: () -> Unit) {
             if (state is AuthState.SignedIn) {
                 Text(stringResource(R.string.acc_signed_in_as), style = MaterialTheme.typography.labelLarge)
                 Text(state.email.ifBlank { state.userId }, style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.acc_sync_not_yet), style = MaterialTheme.typography.bodyMedium)
                 OutlinedButton(onClick = { auth.signOut() }) { Text(stringResource(R.string.acc_sign_out)) }
+
+                HorizontalDivider()
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.sync_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(checked = sync.enabled, onCheckedChange = { sync.setEnabled(it) })
+                }
+                Text(stringResource(R.string.sync_consent), style = MaterialTheme.typography.bodySmall)
+                if (sync.enabled) {
+                    if (sync.busy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    Button(onClick = { sync.syncNow() }, enabled = !sync.busy) {
+                        Text(stringResource(R.string.sync_now))
+                    }
+                    Text(
+                        if (sync.lastSyncMs > 0L) {
+                            stringResource(
+                                R.string.sync_last,
+                                DateFormat.getDateTimeInstance().format(Date(sync.lastSyncMs)),
+                            )
+                        } else {
+                            stringResource(R.string.sync_never)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    sync.status?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                }
             } else {
                 OutlinedTextField(
                     value = email,

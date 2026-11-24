@@ -6,6 +6,7 @@ import dev.browsery.app.data.AppDatabase
 import dev.browsery.app.download.DownloadManager
 import dev.browsery.app.extensions.ExtensionManager
 import dev.browsery.app.settings.AppSettings
+import dev.browsery.app.sync.SyncManager
 
 class BrowseryApp : Application() {
     /** Satu pengelola unduhan per proses; dipakai oleh UI, BrowserController, dan service. */
@@ -16,4 +17,6 @@ class BrowseryApp : Application() {
     val extensions: ExtensionManager by lazy { ExtensionManager(this, settings) }
 
     val auth: AuthManager by lazy { AuthManager(this) }
+
+    val sync: SyncManager by lazy { SyncManager(this, AppDatabase.get(this), auth) }
 }
