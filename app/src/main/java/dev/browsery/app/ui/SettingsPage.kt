@@ -1,9 +1,10 @@
 package dev.browsery.app.ui
 
 import android.widget.Toast
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +31,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -48,7 +50,7 @@ import org.mozilla.geckoview.StorageController
 private enum class Pending { SiteData, Cache, History, Reset }
 
 @Composable
-fun SettingsPage(settings: AppSettings, db: AppDatabase, downloads: DownloadManager, onClose: () -> Unit) {
+fun SettingsPage(settings: AppSettings, db: AppDatabase, downloads: DownloadManager, onClose: () -> Unit, onAppearance: () -> Unit = {}) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val s by settings.state.collectAsState()
@@ -68,10 +70,13 @@ fun SettingsPage(settings: AppSettings, db: AppDatabase, downloads: DownloadMana
         Toast.makeText(ctx, if (ok) R.string.clear_done else R.string.clear_failed, Toast.LENGTH_SHORT).show()
     }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(modifier = Modifier.fillMaxSize(), color = Color.Transparent) {
         Column(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
             PageHeader(stringResource(R.string.settings_title), onClose)
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
+                Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                    OutlinedButton(onClick = onAppearance) { Text(stringResource(R.string.settings_appearance_entry)) }
+                }
                 Section(stringResource(R.string.settings_search))
                 Chips {
                     SearchEngine.entries.forEach { e ->
@@ -232,10 +237,11 @@ private fun Section(title: String) {
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Chips(content: @Composable () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 4.dp),
+    FlowRow(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) { content() }
 }

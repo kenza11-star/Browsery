@@ -2,6 +2,8 @@ package dev.browsery.app.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -9,10 +11,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,7 +36,9 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import dev.browsery.app.BrowseryApp
 import dev.browsery.app.auth.AuthManager
 import dev.browsery.app.browser.TabManager
 import dev.browsery.app.data.AppDatabase
@@ -48,13 +49,13 @@ import dev.browsery.app.settings.AppSettings
 /**
  * Sistem desain "glass". Catatan jujur: konten web (GeckoView) adalah surface native, sehingga blur latar
  * sungguhan di atas halaman web tidak mungkin. Efek kaca hanya di atas latar Compose: lapisan tembus
- * pandang + tepi gradien tipis + bercak cahaya lembut. Tanpa RenderEffect blur agar tetap ringan.
+ * pandang + tepi gradien tipis. Tanpa RenderEffect blur agar tetap ringan.
  */
 object Glass {
     val Card: Shape = RoundedCornerShape(20.dp)
 }
 
-/** Latar gradien lembut + dua bercak cahaya. Digambar sekali (tanpa blur), murah untuk GPU. */
+/** Latar gradien lembut + dua bercak cahaya (dipakai saat tidak ada wallpaper). Digambar sekali, tanpa blur. */
 @Composable
 fun GlassBackground(modifier: Modifier = Modifier) {
     val dark = MaterialTheme.colorScheme.onBackground.luminance() > 0.5f
@@ -113,8 +114,8 @@ fun Modifier.pressScale(onClick: () -> Unit, pressed: Float = 0.97f): Modifier {
 }
 
 /**
- * Akar aplikasi: latar kaca di belakang, halaman berganti dengan transisi fade + geser/skala halus.
- * Tema membuat warna background transparan agar latar ini terlihat di semua halaman non-web.
+ * Akar aplikasi. Latar: wallpaper (bila dipilih) atau gradien. Halaman web TIDAK dianimasikan/transformasi
+ * (surface native Gecko): hanya halaman non-web yang fade/geser, agar tidak patah-patah.
  */
 @Composable
 fun GlassAppRoot(
@@ -125,20 +126,27 @@ fun GlassAppRoot(
     extensions: ExtensionManager,
     auth: AuthManager,
 ) {
+    val wp = (LocalContext.current.applicationContext as BrowseryApp).wallpaper
     var page by remember { mutableStateOf(Page.Browser) }
+    var appearance by remember { mutableStateOf(false) }
     val s by settings.state.collectAsState()
     BackHandler(enabled = page != Page.Browser) { page = Page.Browser }
+    BackHandler(enabled = page == Page.Settings && appearance) { appearance = false }
+    val ctl = tabs.state.active?.let { tabs.controllerOf(it.id) }
+    val isHome = ctl == null || ctl.state.started != true
     Box(Modifier.fillMaxSize()) {
-        GlassBackground()
+        if (wp.sharp != null && (page != Page.Browser || isHome)) {
+            WallpaperLayer(wp, liquidVisible = page == Page.Browser, scrim = if (page == Page.Browser) 0.16f else 0.5f)
+        } else {
+            GlassBackground()
+        }
         AnimatedContent(
             targetState = page,
             transitionSpec = {
                 if (targetState == Page.Browser) {
-                    (fadeIn(tween(220, easing = FastOutSlowInEasing)) + scaleIn(tween(260, easing = FastOutSlowInEasing), initialScale = 1.03f)) togetherWith
-                        (fadeOut(tween(160)) + slideOutVertically(tween(260, easing = FastOutSlowInEasing)) { it / 12 })
+                    EnterTransition.None togetherWith fadeOut(tween(140))
                 } else {
-                    (fadeIn(tween(240, delayMillis = 40, easing = FastOutSlowInEasing)) + slideInVertically(tween(300, easing = FastOutSlowInEasing)) { it / 12 }) togetherWith
-                        (fadeOut(tween(160)) + scaleOut(tween(220), targetScale = 0.97f))
+                    fadeIn(tween(220, easing = FastOutSlowInEasing)) + slideInVertically(tween(260, easing = FastOutSlowInEasing)) { it / 14 } togetherWith ExitTransition.None
                 }
             },
             label = "page",
@@ -150,7 +158,12 @@ fun GlassAppRoot(
                 Page.Bookmarks -> BookmarksPage(db, tabs, onClose = { page = Page.Browser })
                 Page.History -> HistoryPage(db, tabs, onClose = { page = Page.Browser })
                 Page.Downloads -> DownloadsPage(downloads, onClose = { page = Page.Browser })
-                Page.Settings -> SettingsPage(settings, db, downloads, onClose = { page = Page.Browser })
+                Page.Settings ->
+                    if (appearance) {
+                        AppearancePage(onClose = { appearance = false })
+                    } else {
+                        SettingsPage(settings, db, downloads, onClose = { page = Page.Browser }, onAppearance = { appearance = true })
+                    }
                 Page.Privacy -> PrivacyPage(settings, onClose = { page = Page.Browser })
                 Page.Extensions -> ExtensionsPage(extensions, onClose = { page = Page.Browser })
                 Page.Account -> AccountPage(auth, onClose = { page = Page.Browser })
