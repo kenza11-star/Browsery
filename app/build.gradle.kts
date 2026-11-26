@@ -13,8 +13,8 @@ android {
         applicationId = "dev.browsery.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.5.1"
+        versionCode = 6
+        versionName = "0.6.0"
 
         // Hanya arm64-v8a (sesuai artefak GeckoView yang dipakai).
         ndk {
@@ -37,6 +37,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            // APK yang diunduh dari CI adalah build debug. Mode debuggable membuat Compose/ART jauh lebih lambat
+            // (penyebab utama lag yang dapat dipastikan dari konfigurasi). Dimatikan; tetap ditandatangani kunci debug.
+            isDebuggable = false
+        }
         release {
             // R8 belum diuji bersama GeckoView; sengaja dimatikan sampai ada uji perangkat.
             isMinifyEnabled = false
