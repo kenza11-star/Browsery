@@ -7,10 +7,30 @@ data class Chunk(val start: Long, val end: Long, val done: Long = 0) {
 }
 
 object Chunks {
+    private const val MIN_SEGMENT = 1L shl 20
+    private const val MAX_SEGMENT = 8L shl 20
+    private const val MAX_SEGMENTS = 512L
+
     /** Membagi [total] byte menjadi paling banyak [connections] potongan berurutan tanpa celah. */
     fun plan(total: Long, connections: Int): List<Chunk> {
         require(total > 0) { "total harus > 0" }
-        val n = minOf(connections.coerceIn(1, 64).toLong(), total).toInt()
+        return split(total, minOf(connections.coerceIn(1, 64).toLong(), total).toInt())
+    }
+
+    /**
+     * Membagi menjadi SEGMEN kecil (sekitar 1 sampai 8 MB, sedikitnya 4 per koneksi) yang diambil bergantian oleh
+     * pekerja. Koneksi yang cepat mengambil lebih banyak segmen, jadi satu koneksi lambat tidak menahan seluruh unduhan.
+     */
+    fun planSegments(total: Long, connections: Int): List<Chunk> {
+        require(total > 0) { "total harus > 0" }
+        val conns = connections.coerceIn(1, 64)
+        if (conns == 1) return split(total, 1)
+        val target = (total / (conns * 4L)).coerceIn(MIN_SEGMENT, MAX_SEGMENT)
+        val n = ((total + target - 1) / target).coerceIn(conns.toLong(), MAX_SEGMENTS).coerceAtMost(total)
+        return split(total, n.toInt())
+    }
+
+    private fun split(total: Long, n: Int): List<Chunk> {
         val base = total / n
         val extra = total % n
         val out = ArrayList<Chunk>(n)

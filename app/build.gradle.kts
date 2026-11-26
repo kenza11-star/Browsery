@@ -13,8 +13,8 @@ android {
         applicationId = "dev.browsery.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.5.0"
+        versionCode = 5
+        versionName = "0.5.1"
 
         // Hanya arm64-v8a (sesuai artefak GeckoView yang dipakai).
         ndk {
@@ -76,6 +76,9 @@ dependencies {
 
     // Pengaturan.
     implementation("androidx.datastore:datastore-preferences:1.1.7")
+
+    // Mesin unduhan: HTTP/1.1 dipaksa agar tiap koneksi paralel benar-benar koneksi TCP sendiri.
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     // Mesin web: GeckoView rilis stabil, arm64-v8a.
     implementation("org.mozilla.geckoview:geckoview-arm64-v8a:159.0.20261102144711")

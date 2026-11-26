@@ -35,11 +35,12 @@ class DownloadEngineTest {
     }
 
     @Test fun parallelUsesSeveralRangesAndProducesIdenticalFile() {
-        server.content = TestServer.gen(4 * 1024 * 1024, 5)
+        server.content = TestServer.gen(8 * 1024 * 1024, 5)
         assertEquals(Outcome.Completed, run("/file", 4))
         assertArrayEquals(server.content, part.readBytes())
-        val expectedStarts = Chunks.plan(server.content.size.toLong(), 4).map { it.start }
-        assertTrue("harus ada 4 permintaan Range pada awal tiap potongan", server.rangeStarts.containsAll(expectedStarts))
+        val expectedStarts = Chunks.planSegments(server.content.size.toLong(), 4).map { it.start }
+        assertTrue("harus ada permintaan Range pada awal tiap segmen", server.rangeStarts.containsAll(expectedStarts))
+        assertTrue("segmen harus lebih banyak dari koneksi", expectedStarts.size > 4)
     }
 
     @Test fun serverWithoutRangeFallsBackToSingleStream() {
@@ -110,6 +111,18 @@ class DownloadEngineTest {
 
     @Test fun stopBeforeStartReturnsStopped() {
         assertEquals(Outcome.Stopped, run("/file", 1, stop = AtomicBoolean(true)))
+    }
+
+    @Test fun pauseIsImmediateEvenWhenServerIsSlow() {
+        server.content = TestServer.gen(4 * 1024 * 1024, 23)
+        server.slowMs = 400
+        val stop = AtomicBoolean(false)
+        val t0 = System.currentTimeMillis()
+        val o = engine.download(server.url("/file"), null, part, 4, null, stop, onProgress = { s ->
+            if (s.downloaded > 0) stop.set(true)
+        })
+        assertEquals(Outcome.Stopped, o)
+        assertTrue("jeda harus cepat, bukan menunggu timeout: ${System.currentTimeMillis() - t0} ms", System.currentTimeMillis() - t0 < 3_000)
     }
 
     @Test fun unsupportedSchemeFails() {
