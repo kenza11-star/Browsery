@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -34,12 +35,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
 import dev.browsery.app.auth.AuthManager
 import dev.browsery.app.browser.TabManager
 import dev.browsery.app.data.AppDatabase
@@ -49,56 +47,49 @@ import dev.browsery.app.settings.AppSettings
 
 /**
  * Sistem desain "glass". Catatan jujur: konten web (GeckoView) adalah surface native, sehingga blur latar
- * sungguhan di atas halaman web tidak mungkin. Efek kaca di sini hanya di atas latar Compose: lapisan
- * tembus pandang + tepi gradien tipis + bercak cahaya lembut. Tanpa RenderEffect blur agar tetap ringan.
+ * sungguhan di atas halaman web tidak mungkin. Efek kaca hanya di atas latar Compose: lapisan tembus
+ * pandang + tepi gradien tipis + bercak cahaya lembut. Tanpa RenderEffect blur agar tetap ringan.
  */
 object Glass {
     val Card: Shape = RoundedCornerShape(20.dp)
-    val Pill: Shape = RoundedCornerShape(50)
 }
 
 /** Latar gradien lembut + dua bercak cahaya. Digambar sekali (tanpa blur), murah untuk GPU. */
 @Composable
 fun GlassBackground(modifier: Modifier = Modifier) {
     val dark = isSystemInDarkTheme()
-    val scheme = MaterialTheme.colorScheme
+    val primary = MaterialTheme.colorScheme.primary
     val base = if (dark) listOf(Color(0xFF14161B), Color(0xFF1B1F2A)) else listOf(Color(0xFFF4F7FC), Color(0xFFE9EFFA))
-    val blobA = scheme.primary.copy(alpha = if (dark) 0.22f else 0.18f)
+    val blobA = primary.copy(alpha = if (dark) 0.22f else 0.18f)
     val blobB = Color(0xFF9B7BFF).copy(alpha = if (dark) 0.16f else 0.14f)
     Box(
         modifier = modifier.fillMaxSize()
             .background(Brush.verticalGradient(base))
             .drawBehind {
-                drawCircle(
-                    brush = Brush.radialGradient(listOf(blobA, Color.Transparent), center = Offset(size.width * 0.15f, size.height * 0.1f), radius = size.width * 0.7f),
-                    radius = size.width * 0.7f,
-                    center = Offset(size.width * 0.15f, size.height * 0.1f),
-                )
-                drawCircle(
-                    brush = Brush.radialGradient(listOf(blobB, Color.Transparent), center = Offset(size.width * 0.95f, size.height * 0.85f), radius = size.width * 0.8f),
-                    radius = size.width * 0.8f,
-                    center = Offset(size.width * 0.95f, size.height * 0.85f),
-                )
+                val ca = Offset(size.width * 0.15f, size.height * 0.1f)
+                val cb = Offset(size.width * 0.95f, size.height * 0.85f)
+                drawCircle(Brush.radialGradient(listOf(blobA, Color.Transparent), center = ca, radius = size.width * 0.7f), radius = size.width * 0.7f, center = ca)
+                drawCircle(Brush.radialGradient(listOf(blobB, Color.Transparent), center = cb, radius = size.width * 0.8f), radius = size.width * 0.8f, center = cb)
             },
     )
 }
 
 /** Permukaan kaca: isi tembus pandang dengan kilau diagonal dan tepi gradien 1dp. */
-fun Modifier.glass(shape: Shape = Glass.Card, dark: Boolean): Modifier {
+@Composable
+fun Modifier.glassSurface(shape: Shape = Glass.Card): Modifier {
+    val dark = isSystemInDarkTheme()
     val fill = if (dark) Color.White.copy(alpha = 0.07f) else Color.White.copy(alpha = 0.62f)
     val edgeTop = if (dark) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.95f)
     val edgeBottom = if (dark) Color.White.copy(alpha = 0.05f) else Color(0x1A1A3A7A)
+    val sheen = Color.White.copy(alpha = if (dark) 0.07f else 0.35f)
     return this
         .clip(shape)
         .background(fill)
-        .background(Brush.linearGradient(listOf(Color.White.copy(alpha = if (dark) 0.07f else 0.35f), Color.Transparent)))
+        .background(Brush.linearGradient(listOf(sheen, Color.Transparent)))
         .border(1.dp, Brush.verticalGradient(listOf(edgeTop, edgeBottom)), shape)
 }
 
-@Composable
-fun Modifier.glassSurface(shape: Shape = Glass.Card): Modifier = glass(shape, isSystemInDarkTheme())
-
-/** Umpan balik tekan: skala pegas halus. Tidak mengubah perilaku klik. */
+/** Umpan balik tekan: skala pegas halus; klik tetap dijalankan di onTap. */
 @Composable
 fun Modifier.pressScale(onClick: () -> Unit, pressed: Float = 0.97f): Modifier {
     var down by remember { mutableStateOf(false) }
@@ -122,11 +113,11 @@ fun Modifier.pressScale(onClick: () -> Unit, pressed: Float = 0.97f): Modifier {
 }
 
 /**
- * Akar aplikasi: latar kaca di belakang, halaman berganti dengan transisi fade+skala/geser halus.
+ * Akar aplikasi: latar kaca di belakang, halaman berganti dengan transisi fade + geser/skala halus.
  * Tema membuat warna background transparan agar latar ini terlihat di semua halaman non-web.
  */
 @Composable
-fun AppRoot(
+fun GlassAppRoot(
     tabs: TabManager,
     db: AppDatabase,
     downloads: DownloadManager,

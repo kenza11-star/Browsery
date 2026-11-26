@@ -24,8 +24,8 @@ import dev.browsery.app.download.DownloadManager
 import dev.browsery.app.extensions.ExtensionManager
 import dev.browsery.app.settings.AppSettings
 import dev.browsery.app.settings.ThemeMode
-import dev.browsery.app.ui.AppRoot
 import dev.browsery.app.ui.BrowseryTheme
+import dev.browsery.app.ui.GlassAppRoot
 
 class MainActivity : ComponentActivity() {
     private lateinit var tabs: TabManager
@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.DARK -> true
             }
             BrowseryTheme(darkTheme = dark) {
-                AppRoot(tabs, db, downloads, settings, extensions, auth)
+                GlassAppRoot(tabs, db, downloads, settings, extensions, auth)
             }
         }
         // Hindari membuka ulang tautan yang sama saat Activity dibuat ulang.

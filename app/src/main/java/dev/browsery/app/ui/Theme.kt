@@ -7,7 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Palet netral ala Chrome: latar datar, kolom alamat berupa pil abu-abu, aksen biru.
+// Palet bersih: warna `background` transparan agar GlassBackground (di GlassAppRoot) terlihat di belakang halaman.
 private val LightColors = lightColorScheme(
     primary = Color(0xFF1A73E8),
     onPrimary = Color.White,
@@ -16,7 +16,7 @@ private val LightColors = lightColorScheme(
     secondaryContainer = Color(0xFFD3E3FD),
     onSecondaryContainer = Color(0xFF041E49),
     tertiaryContainer = Color(0xFFE2D7F5),
-    background = Color.White,
+    background = Color.Transparent,
     onBackground = Color(0xFF1F1F1F),
     surface = Color.White,
     onSurface = Color(0xFF1F1F1F),
@@ -35,7 +35,7 @@ private val DarkColors = darkColorScheme(
     secondaryContainer = Color(0xFF0842A0),
     onSecondaryContainer = Color(0xFFD3E3FD),
     tertiaryContainer = Color(0xFF4A3D6B),
-    background = Color(0xFF1F1F1F),
+    background = Color.Transparent,
     onBackground = Color(0xFFE3E3E3),
     surface = Color(0xFF1F1F1F),
     onSurface = Color(0xFFE3E3E3),
