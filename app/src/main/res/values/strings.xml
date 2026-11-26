@@ -36,10 +36,10 @@
     <string name="menu_bookmarks">Bookmark</string>
     <string name="menu_history">Riwayat</string>
     <string name="menu_share">Bagikan halaman</string>
-    <string name="menu_downloads">Unduhan (tersedia di Stage 5)</string>
-    <string name="menu_find">Cari di halaman (tersedia di Stage 11)</string>
-    <string name="menu_desktop">Situs desktop (tersedia di Stage 11)</string>
-    <string name="menu_settings">Pengaturan (tersedia di Stage 6)</string>
+    <string name="menu_downloads">Unduhan</string>
+    <string name="menu_find">Cari di halaman</string>
+    <string name="menu_desktop">Situs desktop</string>
+    <string name="menu_settings">Pengaturan</string>
 
     <string name="tabs_title">Tab</string>
     <string name="tabs_count_desc">Tab terbuka: %1$d. Buka daftar tab</string>
