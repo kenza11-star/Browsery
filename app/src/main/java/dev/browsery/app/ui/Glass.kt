@@ -17,7 +17,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +35,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import dev.browsery.app.auth.AuthManager
@@ -57,7 +57,7 @@ object Glass {
 /** Latar gradien lembut + dua bercak cahaya. Digambar sekali (tanpa blur), murah untuk GPU. */
 @Composable
 fun GlassBackground(modifier: Modifier = Modifier) {
-    val dark = isSystemInDarkTheme()
+    val dark = MaterialTheme.colorScheme.onBackground.luminance() > 0.5f
     val primary = MaterialTheme.colorScheme.primary
     val base = if (dark) listOf(Color(0xFF14161B), Color(0xFF1B1F2A)) else listOf(Color(0xFFF4F7FC), Color(0xFFE9EFFA))
     val blobA = primary.copy(alpha = if (dark) 0.22f else 0.18f)
@@ -77,7 +77,7 @@ fun GlassBackground(modifier: Modifier = Modifier) {
 /** Permukaan kaca: isi tembus pandang dengan kilau diagonal dan tepi gradien 1dp. */
 @Composable
 fun Modifier.glassSurface(shape: Shape = Glass.Card): Modifier {
-    val dark = isSystemInDarkTheme()
+    val dark = MaterialTheme.colorScheme.onBackground.luminance() > 0.5f
     val fill = if (dark) Color.White.copy(alpha = 0.07f) else Color.White.copy(alpha = 0.62f)
     val edgeTop = if (dark) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.95f)
     val edgeBottom = if (dark) Color.White.copy(alpha = 0.05f) else Color(0x1A1A3A7A)
