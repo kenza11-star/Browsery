@@ -2,21 +2,24 @@
 <resources>
     <string name="app_title">Tampilan dan wallpaper</string>
     <string name="app_wallpaper">Wallpaper</string>
-    <string name="app_pick">Pilih foto</string>
+    <string name="app_pick">Pilih foto, GIF, atau video</string>
     <string name="app_reset">Kembali ke bawaan</string>
-    <string name="app_none">Bawaan (tanpa foto)</string>
-    <string name="app_busy">Memuat gambar</string>
-    <string name="app_local_note">Foto disalin ke penyimpanan privat aplikasi dan tidak diunggah. GIF dibaca sebagai gambar diam; video belum didukung.</string>
+    <string name="app_none">Bawaan (tanpa media)</string>
+    <string name="app_busy">Memuat media</string>
+    <string name="app_local_note">Media disalin ke penyimpanan privat aplikasi dan tidak diunggah. GIF beranimasi di Android 9 ke atas; di bawahnya tampil sebagai gambar diam. Video diputar tanpa suara dan berulang.</string>
     <string name="app_liquid">Efek Liquid Glass</string>
-    <string name="app_liquid_note">Aktif bila wallpaper dipilih; hanya di halaman beranda.</string>
-    <string name="app_coverage">Cakupan area blur</string>
-    <string name="app_blur">Intensitas blur</string>
+    <string name="app_liquid_note">Aktif bila media dipilih; hanya di beranda. Untuk foto, isi cairan adalah salinan buram; untuk GIF dan video berupa kaca tembus pandang tanpa blur.</string>
+    <string name="app_coverage">Cakupan area cairan</string>
+    <string name="app_blur">Intensitas blur (foto)</string>
     <string name="app_speed">Kecepatan aliran</string>
     <string name="app_animate">Animasi bergerak</string>
     <string name="app_quality">Kualitas</string>
     <string name="app_q_auto">Otomatis</string>
     <string name="app_q_battery">Hemat</string>
     <string name="app_q_high">Tinggi</string>
-    <string name="app_limits">Blur dibuat dari salinan wallpaper berukuran kecil (bukan blur langsung), hanya di dalam bentuk cairan; di luarnya wallpaper tetap tajam. Halaman web tidak pernah diburamkan. Kecepatan frame tergantung perangkat; 120 FPS hanya target, bukan jaminan.</string>
+    <string name="app_refresh">Refresh rate yang diinginkan</string>
+    <string name="app_refresh_auto">Otomatis</string>
+    <string name="app_refresh_note">Hanya permintaan ke sistem; layar dan Android yang memutuskan. Foto diam tidak punya FPS.</string>
+    <string name="app_limits">Mode Hemat tidak menggerakkan GIF/video. Animasi berhenti saat aplikasi tidak terlihat, di luar beranda, atau bila animasi sistem dimatikan. Halaman web tidak pernah diburamkan. Kecepatan frame tergantung perangkat; 120 FPS hanya target, bukan jaminan.</string>
     <string name="settings_appearance_entry">Tampilan dan wallpaper</string>
 </resources>

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +44,7 @@ import dev.browsery.app.auth.AuthManager
 import dev.browsery.app.browser.TabManager
 import dev.browsery.app.data.AppDatabase
 import dev.browsery.app.download.DownloadManager
+import dev.browsery.app.engine.ThumbnailStore
 import dev.browsery.app.extensions.ExtensionManager
 import dev.browsery.app.settings.AppSettings
 
@@ -126,12 +128,20 @@ fun GlassAppRoot(
     extensions: ExtensionManager,
     auth: AuthManager,
 ) {
-    val wp = (LocalContext.current.applicationContext as BrowseryApp).wallpaper
+    val ctx = LocalContext.current
+    val wp = (ctx.applicationContext as BrowseryApp).wallpaper
     var page by remember { mutableStateOf(Page.Browser) }
     var appearance by remember { mutableStateOf(false) }
     val s by settings.state.collectAsState()
     BackHandler(enabled = page != Page.Browser) { page = Page.Browser }
     BackHandler(enabled = page == Page.Settings && appearance) { appearance = false }
+    // Permintaan refresh rate ke sistem (0 = biarkan sistem memilih).
+    LaunchedEffect(wp.refresh) {
+        val act = ctx.findActivity() ?: return@LaunchedEffect
+        val lp = act.window.attributes
+        lp.preferredRefreshRate = wp.refresh.toFloat()
+        act.window.attributes = lp
+    }
     val ctl = tabs.state.active?.let { tabs.controllerOf(it.id) }
     val isHome = ctl == null || ctl.state.started != true
     Box(Modifier.fillMaxSize()) {
@@ -153,7 +163,11 @@ fun GlassAppRoot(
             modifier = Modifier.fillMaxSize(),
         ) { p ->
             when (p) {
-                Page.Browser -> BrowserPage(tabs, db, settings, bottomBar = s.toolbarBottom, go = { page = it })
+                Page.Browser -> BrowserPage(tabs, db, settings, bottomBar = s.toolbarBottom, go = { target ->
+                    // Ambil gambar mini halaman nyata sebelum pindah (hanya memori).
+                    if (target != Page.Browser) ThumbnailStore.captureActive()
+                    page = target
+                })
                 Page.Tabs -> TabsPage(tabs, onClose = { page = Page.Browser })
                 Page.Bookmarks -> BookmarksPage(db, tabs, onClose = { page = Page.Browser })
                 Page.History -> HistoryPage(db, tabs, onClose = { page = Page.Browser })
