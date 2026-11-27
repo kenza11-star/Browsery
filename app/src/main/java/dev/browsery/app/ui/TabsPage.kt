@@ -4,8 +4,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -24,8 +23,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.FilterChip
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,7 +52,6 @@ import dev.browsery.app.browser.TabManager
 import dev.browsery.app.engine.ThumbnailStore
 
 /** Pengalih tab kaca: grid dua kolom, gambar mini halaman nyata (bila ada), pencarian, tab biasa/privat. */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TabsPage(tabs: TabManager, onClose: () -> Unit) {
     val s = tabs.state
@@ -70,29 +68,34 @@ fun TabsPage(tabs: TabManager, onClose: () -> Unit) {
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color.Transparent) {
         Column(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.Center,
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 IconButton(onClick = onClose) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
                 }
-                FilledTonalIconButton(onClick = { tabs.newTab(showPrivate); onClose() }) {
+                FilledIconButton(onClick = { tabs.newTab(showPrivate); onClose() }, modifier = Modifier.size(40.dp)) {
                     Icon(Icons.Filled.Add, stringResource(if (showPrivate) R.string.menu_new_private else R.string.menu_new_tab))
                 }
-                FilterChip(
-                    selected = !showPrivate,
-                    onClick = { showPrivate = false },
-                    label = { Text(stringResource(R.string.tabs_normal)) },
+                GlassSegmented(
+                    options = listOf(stringResource(R.string.tabs_normal), stringResource(R.string.private_label)),
+                    selected = if (showPrivate) 1 else 0,
+                    onSelect = { showPrivate = it == 1 },
+                    modifier = Modifier.width(150.dp),
                 )
-                FilterChip(
-                    selected = showPrivate,
-                    onClick = { showPrivate = true },
-                    label = { Text(stringResource(R.string.private_label)) },
-                )
-                TextButton(onClick = { tabs.reopenClosed(); onClose() }, enabled = s.closed.isNotEmpty()) {
-                    Text(stringResource(R.string.tabs_reopen))
+                TextButton(
+                    onClick = { tabs.reopenClosed(); onClose() },
+                    enabled = s.closed.isNotEmpty(),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(
+                        stringResource(R.string.tabs_reopen),
+                        style = MaterialTheme.typography.labelSmall,
+                        textAlign = TextAlign.End,
+                        maxLines = 2,
+                    )
                 }
             }
             TextField(
@@ -100,6 +103,7 @@ fun TabsPage(tabs: TabManager, onClose: () -> Unit) {
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).glassSurface(RoundedCornerShape(24.dp)),
                 singleLine = true,
+                leadingIcon = { Icon(Icons.Filled.Search, null) },
                 placeholder = { Text(stringResource(R.string.tabs_search)) },
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
