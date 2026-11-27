@@ -116,7 +116,7 @@ fun WallpaperLayer(wp: WallpaperController, liquidVisible: Boolean, scrim: Float
     val running = showLiquid && wp.animate && motionOk
     val mediaPlays = motionOk && wp.mediaMayAnimate()
 
-    var phase by remember { mutableFloatStateOf(1.2f) }
+    var phase by remember { mutableFloatStateOf(wp.phase) }
     val fps = wp.fpsCap()
     val speed = wp.speed
     LaunchedEffect(running, fps, speed) {
@@ -130,6 +130,7 @@ fun WallpaperLayer(wp: WallpaperController, liquidVisible: Boolean, scrim: Float
                 val dt = now - last
                 if (dt >= minNs - 2_000_000L) {
                     phase += dt / 1_000_000_000f * rate
+                    wp.phase = phase
                     last = now
                 }
             }
@@ -174,7 +175,7 @@ fun WallpaperLayer(wp: WallpaperController, liquidVisible: Boolean, scrim: Float
     val videoOn = kind == Kind.VIDEO && mediaPlays
     Box(modifier = modifier.fillMaxSize()) {
         if (videoOn) {
-            VideoWallpaper(wp.mediaFile.path, onError = { wp.fail("Video tidak dapat diputar di perangkat ini.") }, modifier = Modifier.fillMaxSize())
+            VideoWallpaper(wp.mediaFile.path, startMs = wp.videoPos, onSave = { wp.videoPos = it }, onError = { wp.fail("Video tidak dapat diputar di perangkat ini.") }, modifier = Modifier.fillMaxSize())
         }
         Box(
             modifier = Modifier.fillMaxSize().drawBehind {
@@ -243,13 +244,18 @@ fun WallpaperLayer(wp: WallpaperController, liquidVisible: Boolean, scrim: Float
 
 /** Video senyap berulang pada TextureView (jalur hardware MediaPlayer). Dilepas saat keluar komposisi. */
 @Composable
-private fun VideoWallpaper(path: String, onError: () -> Unit, modifier: Modifier) {
-    val holder = remember(path) { VideoHolder(path, onError) }
+private fun VideoWallpaper(path: String, startMs: Int, onSave: (Int) -> Unit, onError: () -> Unit, modifier: Modifier) {
+    val holder = remember(path) { VideoHolder(path, startMs, onSave, onError) }
     DisposableEffect(holder) { onDispose { holder.release() } }
     AndroidView(modifier = modifier, factory = { ctx -> TextureView(ctx).also { holder.attach(it) } })
 }
 
-private class VideoHolder(private val path: String, private val onError: () -> Unit) {
+private class VideoHolder(
+    private val path: String,
+    private val startMs: Int,
+    private val onSave: (Int) -> Unit,
+    private val onError: () -> Unit,
+) {
     private var player: MediaPlayer? = null
     private var surface: Surface? = null
     private var view: TextureView? = null
@@ -278,7 +284,10 @@ private class VideoHolder(private val path: String, private val onError: () -> U
             m.setVolume(0f, 0f)
             m.setOnVideoSizeChangedListener { _, w, h -> vw = w; vh = h; fit() }
             m.setOnErrorListener { _, _, _ -> onError(); true }
-            m.setOnPreparedListener { it.start() }
+            m.setOnPreparedListener {
+                if (startMs > 0) it.seekTo(startMs)
+                it.start()
+            }
             m.prepareAsync()
         } catch (e: Exception) {
             onError()
@@ -300,6 +309,7 @@ private class VideoHolder(private val path: String, private val onError: () -> U
 
     fun release() {
         try {
+            player?.let { onSave(it.currentPosition) }
             player?.release()
         } catch (e: Exception) {
             // sudah dilepas
