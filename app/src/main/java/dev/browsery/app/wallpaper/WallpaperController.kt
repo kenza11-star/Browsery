@@ -30,6 +30,7 @@ enum class Kind { NONE, IMAGE, GIF, VIDEO }
  * Wallpaper lokal (foto, GIF, video). Salinan privat di filesDir; tanpa izin penyimpanan luas; tidak diunggah.
  * `sharp` = gambar tajam (bingkai pertama untuk GIF/video) yang di-crop ke rasio layar; `blurred` = salinan kecil
  * untuk isi cairan (hanya foto). GIF/video: area cairan berupa kaca tembus pandang tanpa blur (degradasi eksplisit).
+ * Tanpa pilihan pengguna, foto bawaan (pemandangan) dipakai; pilihan pengguna tersimpan lintas proses.
  */
 class WallpaperController(private val app: Application) {
     private val prefs = app.getSharedPreferences("wallpaper", Context.MODE_PRIVATE)
@@ -68,13 +69,39 @@ class WallpaperController(private val app: Application) {
     var busy by mutableStateOf(false)
         private set
 
+    /** true bila yang tampil adalah foto bawaan (bukan pilihan pengguna). */
+    var isDefault by mutableStateOf(false)
+        private set
+
+    /** Fase aliran cairan dan posisi video dipertahankan selama proses hidup agar tidak mengulang dari awal. */
+    var phase: Float = 1.2f
+    var videoPos: Int = 0
+
     private var sharpBitmap: Bitmap? = null
 
     val mediaFile: File get() = if (kind == Kind.VIDEO) vidFile else imgFile
 
     init {
         val k = runCatching { Kind.valueOf(prefs.getString("kind", "NONE").orEmpty()) }.getOrDefault(Kind.NONE)
-        if (k != Kind.NONE && fileFor(k).exists()) reload(k)
+        if (k != Kind.NONE && fileFor(k).exists()) reload(k) else loadDefault()
+    }
+
+    /** Foto bawaan dibuat sinkron (kecil) agar tidak ada kedipan saat aplikasi dibuka. */
+    private fun loadDefault() {
+        try {
+            val dm = app.resources.displayMetrics
+            val sw = minOf(dm.widthPixels, dm.heightPixels)
+            val sh = maxOf(dm.widthPixels, dm.heightPixels)
+            val bmp = DefaultWallpaper.create(sw, sh)
+            sharpBitmap = bmp
+            sharp = bmp.asImageBitmap()
+            info = "Bawaan: foto pemandangan"
+            isDefault = true
+            blurred = null
+            buildBlur(bmp)
+        } catch (e: Exception) {
+            isDefault = false
+        }
     }
 
     private fun fileFor(k: Kind) = if (k == Kind.VIDEO) vidFile else imgFile
@@ -161,6 +188,7 @@ class WallpaperController(private val app: Application) {
 
     fun reset() {
         blurJob?.cancel()
+        isDefault = false
         imgFile.delete()
         vidFile.delete()
         prefs.edit().putString("kind", "NONE").apply()
@@ -171,6 +199,8 @@ class WallpaperController(private val app: Application) {
         sharpBitmap = null
         info = null
         error = null
+        videoPos = 0
+        loadDefault()
     }
 
     /** Dipanggil bila pemutar video/GIF gagal saat dipakai. */
@@ -188,12 +218,15 @@ class WallpaperController(private val app: Application) {
                 } else {
                     fileFor(k).delete()
                     error = "Wallpaper tersimpan tidak dapat dibaca; kembali ke bawaan."
+                    loadDefault()
                 }
             } catch (e: OutOfMemoryError) {
                 error = "Memori tidak cukup untuk wallpaper."
+                loadDefault()
             } catch (e: Exception) {
                 fileFor(k).delete()
                 error = "Wallpaper tersimpan rusak; kembali ke bawaan."
+                loadDefault()
             }
         }
     }
@@ -248,6 +281,8 @@ class WallpaperController(private val app: Application) {
             cropped = Bitmap.createBitmap(bmp, 0, (bmp.height - ch) / 2, bmp.width, ch)
         }
         if (cropped !== bmp) bmp.recycle()
+        isDefault = false
+        videoPos = 0
         sharpBitmap = cropped
         sharp = cropped.asImageBitmap()
         val label = when (k) {
