@@ -1,11 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Saturnus: cincin separuh belakang, planet, cincin separuh depan (dengan tepi pemisah). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:fillType="evenOdd"
-        android:pathData="M54,30a24,24 0,1 1,0 48a24,24 0,1 1,0 -48zM54,38a16,16 0,1 0,0 32a16,16 0,1 0,0 -32z" />
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:rotation="-20">
+        <path
+            android:pathData="M24,54a30,9 0 0 1 60,0"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="3.6"
+            android:strokeLineCap="round" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M54,36a18,18 0,1 1,0 36a18,18 0,1 1,0 -36z" />
+        <path
+            android:pathData="M24,54a30,9 0 0 0 60,0"
+            android:strokeColor="#FF0E1A33"
+            android:strokeWidth="7.6"
+            android:strokeLineCap="butt" />
+        <path
+            android:pathData="M24,54a30,9 0 0 0 60,0"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="3.6"
+            android:strokeLineCap="round" />
+    </group>
 </vector>

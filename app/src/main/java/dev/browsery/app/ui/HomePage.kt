@@ -1,10 +1,10 @@
 package dev.browsery.app.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,7 +13,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -23,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,12 +34,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import dev.browsery.app.BrowseryApp
 import dev.browsery.app.R
 import dev.browsery.app.browser.ResolvedInput
 import dev.browsery.app.browser.TabManager
@@ -49,13 +54,17 @@ import dev.browsery.app.data.AppDatabase
 import dev.browsery.app.data.ShortcutEntity
 import kotlinx.coroutines.launch
 
-/** Tab baru: nama aplikasi dan pintasan buatan pengguna (awalnya kosong). Pencarian lewat kolom alamat di atas. */
+/** Tab baru: logo Saturnus + nama, pintasan kaca buatan pengguna. Pencarian lewat kolom alamat di atas. */
 @Composable
 fun HomePage(tabs: TabManager, db: AppDatabase) {
     val scope = rememberCoroutineScope()
+    val wp = (LocalContext.current.applicationContext as BrowseryApp).wallpaper
+    val onWallpaper = wp.sharp != null
+    val ink = if (onWallpaper) Color.White else MaterialTheme.colorScheme.onBackground
     val shortcuts by remember { db.shortcutDao().observeAll() }.collectAsState(initial = emptyList<ShortcutEntity>())
     var editing by remember { mutableStateOf<ShortcutEntity?>(null) }
     var adding by remember { mutableStateOf(false) }
+    val tile = RoundedCornerShape(20.dp)
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(84.dp),
@@ -65,69 +74,71 @@ fun HomePage(tabs: TabManager, db: AppDatabase) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 56.dp, bottom = 36.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
             ) {
+                SaturnLogo(
+                    modifier = Modifier.size(56.dp),
+                    ring = ink,
+                    planet = ink,
+                    edge = if (onWallpaper) Color(0xFF0B1220) else MaterialTheme.colorScheme.surface,
+                )
                 Text(
                     stringResource(R.string.home_title),
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 10.dp),
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 40.sp,
+                        shadow = if (onWallpaper) Shadow(Color(0x66000000), Offset(0f, 3f), 14f) else null,
+                    ),
+                    color = ink,
                 )
             }
         }
         items(shortcuts, key = { it.id }) { sc ->
             Column(
-                modifier = Modifier
-                    .clip(MaterialTheme.shapes.medium)
-                    .clickable { tabs.navigate(sc.url) }
-                    .padding(4.dp),
+                modifier = Modifier.animateItem().padding(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = CircleShape,
-                    modifier = Modifier.size(56.dp),
+                Box(
+                    modifier = Modifier.size(60.dp).glassSurface(tile).pressScale({ tabs.navigate(sc.url) }, 0.92f),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(sc.title.trim().take(1).uppercase(), style = MaterialTheme.typography.titleLarge)
-                    }
+                    Text(sc.title.trim().take(1).uppercase(), style = MaterialTheme.typography.titleLarge, color = ink)
                 }
                 Text(
                     sc.title,
                     style = MaterialTheme.typography.labelMedium,
+                    color = ink,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier.padding(top = 6.dp),
                 )
                 IconButton(onClick = { editing = sc }, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Filled.Edit, stringResource(R.string.shortcut_edit), modifier = Modifier.size(14.dp))
+                    Icon(Icons.Filled.Edit, stringResource(R.string.shortcut_edit), tint = ink, modifier = Modifier.size(14.dp))
                 }
             }
         }
         item {
             Column(
-                modifier = Modifier
-                    .clip(MaterialTheme.shapes.medium)
-                    .clickable { adding = true }
-                    .padding(4.dp),
+                modifier = Modifier.padding(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = CircleShape,
-                    modifier = Modifier.size(56.dp),
+                Box(
+                    modifier = Modifier.size(60.dp).glassSurface(tile).pressScale({ adding = true }, 0.92f),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Filled.Add, stringResource(R.string.shortcut_add))
-                    }
+                    Icon(Icons.Filled.Add, stringResource(R.string.shortcut_add), tint = ink)
                 }
                 Text(
                     stringResource(R.string.shortcut_add),
                     style = MaterialTheme.typography.labelMedium,
+                    color = ink,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier.padding(top = 6.dp),
                 )
             }
         }
@@ -173,6 +184,7 @@ private fun ShortcutDialog(
     var error by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = Glass.Card,
         title = { Text(stringResource(if (initial == null) R.string.shortcut_add else R.string.shortcut_edit)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
