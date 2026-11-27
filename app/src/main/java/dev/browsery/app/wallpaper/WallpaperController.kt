@@ -43,7 +43,7 @@ class WallpaperController(private val app: Application) {
         private set
     var animate by mutableStateOf(prefs.getBoolean("animate", true))
         private set
-    var coverage by mutableIntStateOf(prefs.getInt("coverage", 35).coerceIn(25, 50))
+    var coverage by mutableIntStateOf(prefs.getInt("coverage", 35).coerceIn(25, 75))
         private set
     var blurLevel by mutableIntStateOf(prefs.getInt("blur", 60).coerceIn(0, 100))
         private set
@@ -108,7 +108,7 @@ class WallpaperController(private val app: Application) {
 
     fun updateLiquid(v: Boolean) { liquid = v; prefs.edit().putBoolean("liquid", v).apply() }
     fun updateAnimate(v: Boolean) { animate = v; prefs.edit().putBoolean("animate", v).apply() }
-    fun updateCoverage(v: Int) { coverage = v.coerceIn(25, 50); prefs.edit().putInt("coverage", coverage).apply() }
+    fun updateCoverage(v: Int) { coverage = v.coerceIn(25, 75); prefs.edit().putInt("coverage", coverage).apply() }
     fun updateSpeed(v: Int) { speed = v.coerceIn(0, 100); prefs.edit().putInt("speed", speed).apply() }
     fun updateRefresh(hz: Int) { refresh = hz; prefs.edit().putInt("refresh", hz).apply() }
     fun updateBlur(v: Int) {

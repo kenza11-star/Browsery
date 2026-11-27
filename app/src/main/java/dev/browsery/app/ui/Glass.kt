@@ -146,7 +146,15 @@ fun GlassAppRoot(
     val isHome = ctl == null || ctl.state.started != true
     Box(Modifier.fillMaxSize()) {
         if (wp.sharp != null && (page != Page.Browser || isHome)) {
-            WallpaperLayer(wp, liquidVisible = page == Page.Browser, scrim = if (page == Page.Browser) 0.16f else 0.5f)
+            WallpaperLayer(
+                wp,
+                liquidVisible = page == Page.Browser || page == Page.Tabs,
+                scrim = when (page) {
+                    Page.Browser -> 0.16f
+                    Page.Tabs -> 0.24f
+                    else -> 0.5f
+                },
+            )
         } else {
             GlassBackground()
         }
