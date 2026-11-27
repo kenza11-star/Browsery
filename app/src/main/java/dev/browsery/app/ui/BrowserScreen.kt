@@ -3,7 +3,6 @@ package dev.browsery.app.ui
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -60,6 +59,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -272,7 +272,7 @@ private fun sharePage(ctx: Context, url: String) {
     ctx.startActivity(Intent.createChooser(send, null))
 }
 
-/** Bilah bawah ala Chrome (ponsel): kembali, maju, tab baru, daftar tab. */
+/** Bilah bawah kaca mengambang (ponsel): kembali, maju, tab baru, daftar tab. */
 @Composable
 private fun NavBar(
     controller: BrowserController?,
@@ -283,7 +283,11 @@ private fun NavBar(
     onTabs: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(52.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .height(56.dp)
+            .glassSurface(RoundedCornerShape(28.dp)),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -390,7 +394,7 @@ private fun AddressRow(
     val canForward = !isHome && st?.canGoForward == true
     val loading = st?.isLoading == true
     val isPrivate = active?.isPrivate == true
-    val pill = if (isPrivate) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh
+    val pillTint = if (isPrivate) MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f) else Color.Transparent
     val textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface)
 
     Row(
@@ -413,8 +417,8 @@ private fun AddressRow(
         }
         Surface(
             shape = RoundedCornerShape(24.dp),
-            color = pill.copy(alpha = 0.78f),
-            modifier = Modifier.weight(1f).height(44.dp),
+            color = pillTint,
+            modifier = Modifier.weight(1f).height(46.dp).glassSurface(RoundedCornerShape(24.dp)),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 when {
@@ -493,7 +497,12 @@ private fun AddressRow(
             IconButton(onClick = { menu = true }) {
                 Icon(Icons.Filled.MoreVert, stringResource(R.string.menu_more))
             }
-            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenu(
+                expanded = menu,
+                onDismissRequest = { menu = false },
+                shape = RoundedCornerShape(22.dp),
+                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.94f),
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
