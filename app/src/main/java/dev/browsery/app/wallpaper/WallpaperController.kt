@@ -5,11 +5,11 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -24,14 +24,17 @@ import kotlinx.coroutines.launch
 
 enum class Quality { AUTO, BATTERY, HIGH }
 
+enum class Kind { NONE, IMAGE, GIF, VIDEO }
+
 /**
- * Wallpaper foto lokal. Salinan privat di filesDir (tanpa izin penyimpanan luas, tidak diunggah ke mana pun).
- * Dua bitmap: `sharp` (tajam, di-crop ke rasio layar) dan `blurred` (salinan kecil yang di-upscale = buram murah),
- * yang HANYA dipakai di dalam mask cairan. GIF/video belum didukung: GIF dibaca sebagai gambar diam.
+ * Wallpaper lokal (foto, GIF, video). Salinan privat di filesDir; tanpa izin penyimpanan luas; tidak diunggah.
+ * `sharp` = gambar tajam (bingkai pertama untuk GIF/video) yang di-crop ke rasio layar; `blurred` = salinan kecil
+ * untuk isi cairan (hanya foto). GIF/video: area cairan berupa kaca tembus pandang tanpa blur (degradasi eksplisit).
  */
 class WallpaperController(private val app: Application) {
     private val prefs = app.getSharedPreferences("wallpaper", Context.MODE_PRIVATE)
-    private val file = File(app.filesDir, "wallpaper.src")
+    private val imgFile = File(app.filesDir, "wallpaper.src")
+    private val vidFile = File(app.filesDir, "wallpaper.vid")
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var blurJob: Job? = null
 
@@ -45,9 +48,15 @@ class WallpaperController(private val app: Application) {
         private set
     var speed by mutableIntStateOf(prefs.getInt("speed", 40).coerceIn(0, 100))
         private set
+    var refresh by mutableIntStateOf(prefs.getInt("refresh", 0))
+        private set
     var quality by mutableStateOf(runCatching { Quality.valueOf(prefs.getString("quality", "AUTO").orEmpty()) }.getOrDefault(Quality.AUTO))
         private set
 
+    var kind by mutableStateOf(Kind.NONE)
+        private set
+    var version by mutableIntStateOf(0)
+        private set
     var sharp by mutableStateOf<ImageBitmap?>(null)
         private set
     var blurred by mutableStateOf<ImageBitmap?>(null)
@@ -61,14 +70,20 @@ class WallpaperController(private val app: Application) {
 
     private var sharpBitmap: Bitmap? = null
 
+    val mediaFile: File get() = if (kind == Kind.VIDEO) vidFile else imgFile
+
     init {
-        if (file.exists()) reload()
+        val k = runCatching { Kind.valueOf(prefs.getString("kind", "NONE").orEmpty()) }.getOrDefault(Kind.NONE)
+        if (k != Kind.NONE && fileFor(k).exists()) reload(k)
     }
+
+    private fun fileFor(k: Kind) = if (k == Kind.VIDEO) vidFile else imgFile
 
     fun updateLiquid(v: Boolean) { liquid = v; prefs.edit().putBoolean("liquid", v).apply() }
     fun updateAnimate(v: Boolean) { animate = v; prefs.edit().putBoolean("animate", v).apply() }
     fun updateCoverage(v: Int) { coverage = v.coerceIn(25, 50); prefs.edit().putInt("coverage", coverage).apply() }
     fun updateSpeed(v: Int) { speed = v.coerceIn(0, 100); prefs.edit().putInt("speed", speed).apply() }
+    fun updateRefresh(hz: Int) { refresh = hz; prefs.edit().putInt("refresh", hz).apply() }
     fun updateBlur(v: Int) {
         blurLevel = v.coerceIn(0, 100)
         prefs.edit().putInt("blur", blurLevel).apply()
@@ -80,10 +95,13 @@ class WallpaperController(private val app: Application) {
         rebuildBlur()
     }
 
-    /** Batas frame per detik untuk animasi cairan. 120 FPS hanyalah target perangkat, tidak dijanjikan. */
+    /** Hemat daya: GIF/video tidak digerakkan (bingkai pertama dipakai). */
+    fun mediaMayAnimate(): Boolean = animate && effectiveQuality() != Quality.BATTERY
+
+    /** Batas frame per detik animasi cairan. 120 FPS hanyalah target perangkat, tidak dijanjikan. */
     fun fpsCap(): Int = when (effectiveQuality()) {
         Quality.BATTERY -> 30
-        Quality.HIGH -> 120
+        Quality.HIGH -> if (refresh > 0) refresh else 120
         Quality.AUTO -> 60
     }
 
@@ -93,13 +111,20 @@ class WallpaperController(private val app: Application) {
         return if (pm?.isPowerSaveMode == true) Quality.BATTERY else Quality.AUTO
     }
 
-    /** Salin gambar pilihan pengguna ke penyimpanan privat lalu decode ulang. */
+    /** Salin media pilihan pengguna ke penyimpanan privat lalu decode. */
     fun import(uri: Uri) {
         busy = true
         error = null
         scope.launch {
+            val tmp = File(app.filesDir, "wallpaper.tmp")
             try {
-                val tmp = File(app.filesDir, "wallpaper.tmp")
+                val mime = app.contentResolver.getType(uri).orEmpty()
+                val k = when {
+                    mime.startsWith("video/") -> Kind.VIDEO
+                    mime == "image/gif" -> Kind.GIF
+                    else -> Kind.IMAGE
+                }
+                val cap = if (k == Kind.VIDEO) MAX_VIDEO else MAX_IMAGE
                 app.contentResolver.openInputStream(uri)?.use { input ->
                     tmp.outputStream().use { out ->
                         var total = 0L
@@ -108,24 +133,27 @@ class WallpaperController(private val app: Application) {
                             val n = input.read(buf)
                             if (n < 0) break
                             total += n
-                            if (total > MAX_BYTES) throw IllegalStateException("Berkas terlalu besar")
+                            if (total > cap) throw IllegalStateException("Berkas terlalu besar")
                             out.write(buf, 0, n)
                         }
                     }
                 } ?: throw IllegalStateException("Berkas tidak dapat dibuka")
-                val ok = decodeFrom(tmp)
-                if (ok) {
-                    tmp.copyTo(file, overwrite = true)
-                    tmp.delete()
+                if (decodeFrom(tmp, k)) {
+                    imgFile.delete()
+                    vidFile.delete()
+                    tmp.copyTo(fileFor(k), overwrite = true)
+                    kind = k
+                    version++
+                    prefs.edit().putString("kind", k.name).apply()
                 } else {
-                    tmp.delete()
-                    error = "Format gambar tidak didukung perangkat ini."
+                    error = "Format media tidak didukung perangkat ini."
                 }
             } catch (e: OutOfMemoryError) {
-                error = "Memori tidak cukup untuk gambar ini."
+                error = "Memori tidak cukup untuk media ini."
             } catch (e: Exception) {
-                error = e.message ?: "Gagal memuat gambar."
+                error = e.message ?: "Gagal memuat media."
             } finally {
+                tmp.delete()
                 busy = false
             }
         }
@@ -133,7 +161,11 @@ class WallpaperController(private val app: Application) {
 
     fun reset() {
         blurJob?.cancel()
-        file.delete()
+        imgFile.delete()
+        vidFile.delete()
+        prefs.edit().putString("kind", "NONE").apply()
+        kind = Kind.NONE
+        version++
         sharp = null
         blurred = null
         sharpBitmap = null
@@ -141,30 +173,56 @@ class WallpaperController(private val app: Application) {
         error = null
     }
 
-    private fun reload() {
+    /** Dipanggil bila pemutar video/GIF gagal saat dipakai. */
+    fun fail(message: String) {
+        reset()
+        error = message
+    }
+
+    private fun reload(k: Kind) {
         scope.launch {
             try {
-                if (!decodeFrom(file)) {
-                    file.delete()
+                if (decodeFrom(fileFor(k), k)) {
+                    kind = k
+                    version++
+                } else {
+                    fileFor(k).delete()
                     error = "Wallpaper tersimpan tidak dapat dibaca; kembali ke bawaan."
                 }
             } catch (e: OutOfMemoryError) {
                 error = "Memori tidak cukup untuk wallpaper."
             } catch (e: Exception) {
-                file.delete()
+                fileFor(k).delete()
                 error = "Wallpaper tersimpan rusak; kembali ke bawaan."
             }
         }
     }
 
-    private fun decodeFrom(src: File): Boolean {
+    private fun decodeFrom(src: File, k: Kind): Boolean {
         val dm = app.resources.displayMetrics
         val sw = minOf(dm.widthPixels, dm.heightPixels)
         val sh = maxOf(dm.widthPixels, dm.heightPixels)
         var ow = 0
         var oh = 0
-        val bmp: Bitmap = if (Build.VERSION.SDK_INT >= 28) {
-            ImageDecoder.decodeBitmap(ImageDecoder.createSource(src)) { dec, i, _ ->
+        val bmp: Bitmap
+        if (k == Kind.VIDEO) {
+            val r = MediaMetadataRetriever()
+            try {
+                r.setDataSource(src.path)
+                ow = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: 0
+                oh = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 0
+                val rot = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull() ?: 0
+                if (rot == 90 || rot == 270) {
+                    val t = ow
+                    ow = oh
+                    oh = t
+                }
+                bmp = r.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC) ?: return false
+            } finally {
+                r.release()
+            }
+        } else if (Build.VERSION.SDK_INT >= 28) {
+            bmp = ImageDecoder.decodeBitmap(ImageDecoder.createSource(src)) { dec, i, _ ->
                 ow = i.size.width
                 oh = i.size.height
                 dec.setAllocator(ImageDecoder.ALLOCATOR_SOFTWARE)
@@ -176,7 +234,7 @@ class WallpaperController(private val app: Application) {
             ow = o.outWidth
             oh = o.outHeight
             val o2 = BitmapFactory.Options().apply { inSampleSize = sampleSizeFor(ow, oh, sw, sh) }
-            BitmapFactory.decodeFile(src.path, o2) ?: return false
+            bmp = BitmapFactory.decodeFile(src.path, o2) ?: return false
         }
         // Crop tengah ke rasio layar potret agar memori kecil; sumber asli tetap tersimpan di berkas.
         val targetRatio = sw.toFloat() / sh.toFloat()
@@ -192,7 +250,12 @@ class WallpaperController(private val app: Application) {
         if (cropped !== bmp) bmp.recycle()
         sharpBitmap = cropped
         sharp = cropped.asImageBitmap()
-        info = "Asli ${ow}×${oh} px · dipakai ${cropped.width}×${cropped.height} px"
+        val label = when (k) {
+            Kind.VIDEO -> "Video"
+            Kind.GIF -> "GIF"
+            else -> "Foto"
+        }
+        info = "$label asli ${ow}×${oh} px · dipakai ${cropped.width}×${cropped.height} px"
         blurred = null
         buildBlur(cropped)
         return true
@@ -226,6 +289,7 @@ class WallpaperController(private val app: Application) {
     }
 
     private companion object {
-        const val MAX_BYTES = 80L * 1024 * 1024
+        const val MAX_IMAGE = 80L * 1024 * 1024
+        const val MAX_VIDEO = 150L * 1024 * 1024
     }
 }
