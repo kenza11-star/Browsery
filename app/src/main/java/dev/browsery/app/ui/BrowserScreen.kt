@@ -283,7 +283,7 @@ private fun NavBar(
     onTabs: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(52.dp).background(MaterialTheme.colorScheme.background),
+        modifier = Modifier.fillMaxWidth().height(52.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -413,7 +413,7 @@ private fun AddressRow(
         }
         Surface(
             shape = RoundedCornerShape(24.dp),
-            color = pill,
+            color = pill.copy(alpha = 0.78f),
             modifier = Modifier.weight(1f).height(44.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
