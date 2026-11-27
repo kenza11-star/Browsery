@@ -7,7 +7,7 @@ import org.junit.Test
 class LiquidBandTest {
     @Test
     fun visibleAreaMatchesCoverageAtAllPhases() {
-        for (cov in listOf(0.25f, 0.35f, 0.5f)) {
+        for (cov in listOf(0.25f, 0.35f, 0.5f, 0.75f)) {
             val band = LiquidBand(1080f, 2400f, cov)
             var p = 0f
             while (p < 60f) {
@@ -19,7 +19,11 @@ class LiquidBandTest {
 
     @Test
     fun bandStaysInsideScreenVertically() {
-        val band = LiquidBand(1080f, 2400f, 0.5f)
+        for (cov in listOf(0.25f, 0.5f, 0.75f)) checkInside(cov)
+    }
+
+    private fun checkInside(cov: Float) {
+        val band = LiquidBand(1080f, 2400f, cov)
         var p = 0f
         while (p < 100f) {
             var x = 0f

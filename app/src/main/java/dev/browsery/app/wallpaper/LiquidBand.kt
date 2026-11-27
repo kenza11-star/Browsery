@@ -13,14 +13,16 @@ class LiquidBand(val w: Float, val h: Float, val coverage: Float) {
     private val thick0 = coverage * h
     private val a1 = 0.06f * h
     private val a2 = 0.03f * h
-    private val drift = max(0f, min(0.2f * h, h / 2f - 0.6f * thick0 - a1 - a2 - 1f))
+    // Variasi tebal mengecil bila cakupan besar agar pita tetap di dalam layar (luas terlihat = coverage).
+    private val variation = max(0f, min(0.2f, (h / 2f - a1 - a2 - 1f) / (0.5f * thick0) - 1f))
+    private val drift = max(0f, min(0.2f * h, h / 2f - 0.5f * thick0 * (1f + variation) - a1 - a2 - 1f))
 
     private fun u(x: Float) = (x / w) * TWO_PI
 
     fun mid(x: Float, p: Float): Float =
         h / 2f + drift * sin(p * 0.37f + 0.8f) + a1 * sin(u(x) + p * 0.9f) + a2 * sin(2f * u(x) - p * 0.6f + 1.3f)
 
-    fun thick(x: Float, p: Float): Float = thick0 * (1f + 0.2f * sin(u(x) + p * 0.5f + 2f))
+    fun thick(x: Float, p: Float): Float = thick0 * (1f + variation * sin(u(x) + p * 0.5f + 2f))
 
     fun top(x: Float, p: Float) = mid(x, p) - thick(x, p) / 2f
 
