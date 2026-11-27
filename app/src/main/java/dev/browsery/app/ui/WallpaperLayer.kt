@@ -29,14 +29,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
@@ -61,7 +65,7 @@ private tailrec fun Context.owner(): LifecycleOwner? = when (this) {
     else -> null
 }
 
-private fun DrawScope.drawCover(img: ImageBitmap) {
+private fun DrawScope.drawCover(img: ImageBitmap, filter: ColorFilter? = null) {
     val scale = max(size.width / img.width, size.height / img.height)
     val sw = (size.width / scale).toInt().coerceIn(1, img.width)
     val sh = (size.height / scale).toInt().coerceIn(1, img.height)
@@ -70,6 +74,7 @@ private fun DrawScope.drawCover(img: ImageBitmap) {
         srcOffset = IntOffset((img.width - sw) / 2, (img.height - sh) / 2),
         srcSize = IntSize(sw, sh),
         dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+        colorFilter = filter,
     )
 }
 
@@ -84,7 +89,8 @@ private fun loadGif(file: File, sw: Int, sh: Int): AnimatedImageDrawable? = try 
 }
 
 /**
- * Wallpaper + (opsional) satu pita cairan. Foto: isi pita = salinan buram, di luar pita tetap tajam.
+ * Wallpaper + (opsional) satu pita cairan berbentuk lensa. Foto: isi pita = salinan buram yang diperbesar
+ * 1,12x dengan saturasi lebih tinggi (efek lensa/refraksi tiruan), di luar pita tetap tajam.
  * GIF: animasi mengikuti waktu sumber (API 28+). Video: MediaPlayer senyap berulang di TextureView.
  * Untuk GIF/video isi pita = kaca tembus pandang tanpa blur. Animasi hanya jalan saat terlihat (beranda),
  * aplikasi RESUMED, "kurangi animasi" sistem mati, dan kualitas bukan Hemat. Hanya gambar ulang tiap frame.
@@ -163,6 +169,7 @@ fun WallpaperLayer(wp: WallpaperController, liquidVisible: Boolean, scrim: Float
     }
 
     val path = remember { Path() }
+    val vivid = remember { ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1.3f) }) }
     val coverage = wp.coverage / 100f
     val videoOn = kind == Kind.VIDEO && mediaPlays
     Box(modifier = modifier.fillMaxSize()) {
@@ -207,18 +214,25 @@ fun WallpaperLayer(wp: WallpaperController, liquidVisible: Boolean, scrim: Float
                         path.lineTo(x, band.bottom(x, p))
                     }
                     path.close()
+                    // Bayangan tepi di luar pita memberi kedalaman (kaca tebal).
+                    drawPath(path, Color.Black.copy(alpha = 0.22f), style = Stroke(width = 5.dp.toPx()))
                     clipPath(path) {
                         if (kind == Kind.IMAGE && blurred != null) {
-                            drawCover(blurred)
-                            drawRect(Color.White.copy(alpha = 0.05f))
+                            // Lensa: perbesar sedikit dan naikkan saturasi agar terlihat membiaskan latar.
+                            scale(1.12f, 1.12f, pivot = Offset(size.width / 2f, band.mid(size.width / 2f, p))) {
+                                drawCover(blurred, vivid)
+                            }
+                            drawRect(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.18f), Color.White.copy(alpha = 0.03f), Color.White.copy(alpha = 0.10f))))
                         } else {
-                            drawRect(Color.White.copy(alpha = 0.14f))
+                            drawRect(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.22f), Color.White.copy(alpha = 0.08f), Color.White.copy(alpha = 0.16f))))
                         }
+                        // Meniskus: cahaya lembut di dalam tepi.
+                        drawPath(path, Color.White.copy(alpha = 0.10f), style = Stroke(width = 8.dp.toPx()))
                     }
                     drawPath(
                         path,
-                        Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.38f), Color.White.copy(alpha = 0.06f)), startY = 0f, endY = size.height),
-                        style = Stroke(width = 1.2.dp.toPx()),
+                        Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.55f), Color.White.copy(alpha = 0.08f)), startY = 0f, endY = size.height),
+                        style = Stroke(width = 1.4.dp.toPx()),
                     )
                 }
                 drawRect(Color.Black.copy(alpha = scrim))
