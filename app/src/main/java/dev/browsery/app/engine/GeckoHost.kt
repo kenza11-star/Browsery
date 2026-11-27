@@ -15,7 +15,10 @@ import org.mozilla.geckoview.GeckoView
 fun GeckoHost(session: GeckoSession, modifier: Modifier = Modifier) {
     AndroidView(
         modifier = modifier,
-        factory = { ctx -> GeckoView(ctx).also { it.setSession(session) } },
-        onRelease = { view -> view.releaseSession() },
+        factory = { ctx -> GeckoView(ctx).also { it.setSession(session); ThumbnailStore.attach(it) } },
+        onRelease = { view ->
+            ThumbnailStore.detach(view)
+            view.releaseSession()
+        },
     )
 }
