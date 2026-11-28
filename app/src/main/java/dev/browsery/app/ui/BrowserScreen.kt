@@ -98,7 +98,7 @@ import dev.browsery.app.extensions.ExtensionManager
 import dev.browsery.app.settings.AppSettings
 import kotlinx.coroutines.launch
 
-enum class Page { Browser, Tabs, Bookmarks, History, Downloads, Settings, Privacy, Extensions, Account }
+enum class Page { Browser, Tabs, Bookmarks, History, Downloads, Settings, Privacy, Extensions, Account, Authenticator }
 
 @Composable
 fun AppRoot(
@@ -122,6 +122,7 @@ fun AppRoot(
         Page.Privacy -> PrivacyPage(settings, onClose = { page = Page.Browser })
         Page.Extensions -> ExtensionsPage(extensions, onClose = { page = Page.Browser })
         Page.Account -> AccountPage(auth, onClose = { page = Page.Browser })
+        Page.Authenticator -> Unit
     }
 }
 
@@ -608,6 +609,7 @@ private fun AddressRow(
                     null,
                     canBookmark,
                 ) { menu = false; onDesktop() }
+                MenuRow(stringResource(R.string.menu_authenticator), Icons.Filled.Lock) { menu = false; go(Page.Authenticator) }
                 MenuRow(stringResource(R.string.menu_fullscreen), null) { menu = false; onImmersive() }
                 HorizontalDivider()
                 MenuRow(stringResource(R.string.menu_extensions), null) { menu = false; go(Page.Extensions) }
