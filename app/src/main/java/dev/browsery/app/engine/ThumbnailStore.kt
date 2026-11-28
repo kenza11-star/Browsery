@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import java.lang.ref.WeakReference
@@ -18,6 +19,7 @@ import org.mozilla.geckoview.GeckoView
  */
 object ThumbnailStore {
     private val map = WeakHashMap<GeckoSession, Bitmap>()
+    private val edges = WeakHashMap<GeckoSession, IntArray>()
     private var viewRef: WeakReference<GeckoView>? = null
 
     var version by mutableIntStateOf(0)
@@ -36,6 +38,33 @@ object ThumbnailStore {
         return map[session]?.asImageBitmap()
     }
 
+    /** Warna rata-rata tepi atas dan tepi bawah halaman (dari tangkapan terakhir), untuk menyamakan warna bar. */
+    fun edgeColors(session: GeckoSession?): Pair<Color, Color>? {
+        if (session == null) return null
+        val e = edges[session] ?: return null
+        return Color(e[0]) to Color(e[1])
+    }
+
+    private fun rowAverage(b: Bitmap, y0: Int, y1: Int): Int {
+        var r = 0L
+        var g = 0L
+        var bl = 0L
+        var n = 0L
+        for (y in y0..y1) {
+            var x = 0
+            while (x < b.width) {
+                val p = b.getPixel(x, y)
+                r += (p shr 16) and 0xFF
+                g += (p shr 8) and 0xFF
+                bl += p and 0xFF
+                n++
+                x += 3
+            }
+        }
+        if (n == 0L) return 0xFF000000.toInt()
+        return (0xFF shl 24) or ((r / n).toInt() shl 16) or ((g / n).toInt() shl 8) or (bl / n).toInt()
+    }
+
     /** Ambil gambar mini halaman yang sedang tampil. Aman dipanggil kapan saja; gagal = diabaikan. */
     fun captureActive() {
         val v = viewRef?.get() ?: return
@@ -50,6 +79,10 @@ object ThumbnailStore {
                         val small = Bitmap.createScaledBitmap(bmp, w, h, true)
                         if (small !== bmp) bmp.recycle()
                         map[session] = small
+                        edges[session] = intArrayOf(
+                            rowAverage(small, 0, minOf(1, small.height - 1)),
+                            rowAverage(small, maxOf(0, small.height - 2), small.height - 1),
+                        )
                         version++
                     }
                 },

@@ -47,6 +47,11 @@ object GeckoRuntimeProvider {
             CookiePolicy.FIRST_PARTY -> cb.setCookieBehavior(ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY)
         }
         s.setGlobalPrivacyControl(d.globalPrivacyControl)
+        if (d.webDark) {
+            s.setPreferredColorScheme(GeckoRuntimeSettings.COLOR_SCHEME_DARK)
+        } else {
+            s.setPreferredColorScheme(GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM)
+        }
         if (d.httpsOnly) {
             s.setAllowInsecureConnections(GeckoRuntimeSettings.HTTPS_ONLY)
         } else {

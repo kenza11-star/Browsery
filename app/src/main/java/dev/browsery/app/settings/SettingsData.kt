@@ -5,7 +5,14 @@ import dev.browsery.app.browser.UrlUtils
 enum class SearchEngine(val id: String, val label: String, val template: String) {
     GOOGLE("google", "Google", "https://www.google.com/search?q=%s"),
     DUCKDUCKGO("duckduckgo", "DuckDuckGo", "https://duckduckgo.com/?q=%s"),
+    BRAVE("brave", "Brave Search", "https://search.brave.com/search?q=%s"),
     BING("bing", "Bing", "https://www.bing.com/search?q=%s"),
+    ECOSIA("ecosia", "Ecosia", "https://www.ecosia.org/search?q=%s"),
+    STARTPAGE("startpage", "Startpage", "https://www.startpage.com/sp/search?query=%s"),
+    QWANT("qwant", "Qwant", "https://www.qwant.com/?q=%s"),
+    YAHOO("yahoo", "Yahoo", "https://search.yahoo.com/search?p=%s"),
+    YANDEX("yandex", "Yandex", "https://yandex.com/search/?text=%s"),
+    MOJEEK("mojeek", "Mojeek", "https://www.mojeek.com/search?q=%s"),
     CUSTOM("custom", "Kustom", ""),
     ;
 
@@ -68,6 +75,8 @@ data class SettingsData(
     val cookiePolicy: CookiePolicy = CookiePolicy.ISOLATE,
     val httpsOnly: Boolean = false,
     val globalPrivacyControl: Boolean = false,
+    /** Minta tema gelap ke situs web (prefers-color-scheme: dark); hanya berefek bila situs mendukungnya. */
+    val webDark: Boolean = true,
     /** Situs yang perlindungan pelacaknya dimatikan (host ternormalisasi). */
     val siteExceptions: Set<String> = emptySet(),
     /** ID ekstensi bawaan yang disetujui pengguna untuk dipasang. */

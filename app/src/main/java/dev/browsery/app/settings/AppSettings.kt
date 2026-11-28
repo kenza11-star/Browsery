@@ -36,6 +36,7 @@ class AppSettings(context: Context) {
     private val kCookie = stringPreferencesKey("cookie_policy")
     private val kHttpsOnly = booleanPreferencesKey("https_only")
     private val kGpc = booleanPreferencesKey("gpc")
+    private val kWebDark = booleanPreferencesKey("web_dark")
     private val kExceptions = stringSetPreferencesKey("site_exceptions")
     private val kExtEnabled = stringSetPreferencesKey("extensions_enabled")
     private val kExtPrivate = stringSetPreferencesKey("extensions_private")
@@ -59,6 +60,7 @@ class AppSettings(context: Context) {
             cookiePolicy = CookiePolicy.fromId(p[kCookie]),
             httpsOnly = p[kHttpsOnly] ?: false,
             globalPrivacyControl = p[kGpc] ?: false,
+            webDark = p[kWebDark] ?: true,
             siteExceptions = p[kExceptions] ?: emptySet(),
             extensionsEnabled = p[kExtEnabled] ?: emptySet(),
             extensionsPrivate = p[kExtPrivate] ?: emptySet(),
@@ -73,7 +75,8 @@ class AppSettings(context: Context) {
         _state.value = next
         UrlUtils.currentTemplate = next.searchTemplate()
         if (next.trackingLevel != prev.trackingLevel || next.cookiePolicy != prev.cookiePolicy ||
-            next.httpsOnly != prev.httpsOnly || next.globalPrivacyControl != prev.globalPrivacyControl
+            next.httpsOnly != prev.httpsOnly || next.globalPrivacyControl != prev.globalPrivacyControl ||
+            next.webDark != prev.webDark
         ) {
             GeckoRuntimeProvider.configure(next)
         }
@@ -88,6 +91,7 @@ class AppSettings(context: Context) {
                     it[kCookie] = next.cookiePolicy.id
                     it[kHttpsOnly] = next.httpsOnly
                     it[kGpc] = next.globalPrivacyControl
+                    it[kWebDark] = next.webDark
                     it[kExceptions] = next.siteExceptions
                     it[kExtEnabled] = next.extensionsEnabled
                     it[kExtPrivate] = next.extensionsPrivate

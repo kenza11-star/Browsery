@@ -31,4 +31,6 @@
     <string name="app_coverage_title">Cakupan area blur</string>
     <string name="app_blur_title">Intensitas blur</string>
     <string name="app_speed_title">Kecepatan aliran cairan</string>
+    <string name="app_webdark">Tema gelap untuk situs web</string>
+    <string name="app_webdark_note">Meminta situs memakai tema gelap (Google, DuckDuckGo, Brave Search, Bing, dan lainnya) bila situs itu mendukungnya. Situs yang tidak mendukung tetap terang. Muat ulang halaman agar berlaku.</string>
 </resources>
