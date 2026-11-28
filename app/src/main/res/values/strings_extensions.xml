@@ -2,7 +2,7 @@
 <resources>
     <string name="menu_extensions">Ekstensi</string>
     <string name="ext_title">Ekstensi</string>
-    <string name="ext_intro">Hanya ekstensi bawaan yang dikemas di dalam Browsery yang dapat dipasang. Ekstensi tidak dipasang sebelum Anda menyetujuinya.</string>
+    <string name="ext_intro">Pasang ekstensi dari katalog resmi Firefox Add-ons atau pilih ekstensi bawaan Browsery. Tidak ada yang dipasang sebelum Anda menyetujui daftar izinnya.</string>
 
     <string name="ext_status_not_installed">Belum dipasang</string>
     <string name="ext_status_enabled">Aktif · versi %1$s</string>
@@ -23,6 +23,29 @@
     <string name="ext_consent_confirm">Setuju dan pasang</string>
     <string name="ext_private_consent_title">Jalankan di tab privat?</string>
 
+    <string name="ext_amo_title">Cari di Firefox Add-ons</string>
+    <string name="ext_search_hint">Cari ekstensi, mis. uBlock Origin</string>
+    <string name="ext_search">Cari</string>
+    <string name="ext_featured">Rekomendasi</string>
+    <string name="ext_featured_note">uBlock Origin memblokir iklan dan pelacak; Dark Reader menggelapkan semua situs. Data diambil langsung dari addons.mozilla.org.</string>
+    <string name="ext_by_link">Pasang dari tautan</string>
+    <string name="ext_link_hint">Tautan halaman addons.mozilla.org atau berkas .xpi</string>
+    <string name="ext_users">%1$s pengguna harian</string>
+    <string name="ext_installed_title">Terpasang</string>
+    <string name="ext_builtin_tag">Bawaan Browsery</string>
+    <string name="ext_installing">Memasang…</string>
+    <string name="ext_none_installed">Belum ada ekstensi terpasang.</string>
+    <string name="ext_bundled_title">Bawaan Browsery</string>
+    <string name="ext_search_empty">Tidak ada hasil.</string>
+    <string name="ext_net_error">Tidak dapat terhubung ke addons.mozilla.org: %1$s</string>
+    <string name="ext_link_bad">Tautan tidak dikenali. Gunakan halaman addons.mozilla.org atau berkas .xpi dari addons.mozilla.org.</string>
+    <string name="ext_already">Terpasang</string>
+    <string name="ext_prompt_title">Pasang %1$s?</string>
+    <string name="ext_prompt_perms">Ekstensi ini meminta izin:</string>
+    <string name="ext_prompt_none">Tidak ada izin tambahan.</string>
+    <string name="ext_prompt_private">Izinkan juga di tab privat</string>
+    <string name="ext_prompt_warn">Ekstensi dapat membaca dan mengubah halaman yang diizinkan. Pasang hanya yang Anda percaya. Engine memverifikasi tanda tangan ekstensi sebelum memasang.</string>
+
     <string name="ext_limits_title">Batasan</string>
-    <string name="ext_limits">Tidak didukung: pemasangan dari Chrome Web Store, Firefox Add-ons, berkas, atau tautan pihak ketiga, karena sumbernya belum dapat diverifikasi dengan aman. Tidak semua ekstensi kompatibel dengan GeckoView. Ekstensi yang dipasang tidak mendapat tombol bilah alat atau halaman opsi. Kesalahan satu ekstensi tidak menghentikan aplikasi, hanya ditampilkan sebagai status.</string>
+    <string name="ext_limits">Hanya ekstensi Firefox (dari addons.mozilla.org) yang didukung; ekstensi Chrome Web Store tidak. Tidak semua ekstensi kompatibel dengan GeckoView. Ekstensi yang dipasang tidak mendapat tombol bilah alat atau jendela popup, sehingga yang butuh antarmuka tidak bisa diatur dari sini. Kesalahan satu ekstensi tidak menghentikan aplikasi, hanya ditampilkan sebagai status.</string>
 </resources>
