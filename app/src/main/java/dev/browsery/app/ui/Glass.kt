@@ -256,5 +256,7 @@ fun GlassAppRoot(
                 Page.Account -> AccountPage(auth, onClose = { page = Page.Browser })
             }
         }
+        // Dialog izin ekstensi: selalu tersedia agar setiap permintaan dari engine punya jawaban pengguna.
+        ExtensionPromptHost(extensions)
     }
 }
