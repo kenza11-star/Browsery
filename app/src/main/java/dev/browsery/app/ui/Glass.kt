@@ -254,6 +254,7 @@ fun GlassAppRoot(
                 Page.Privacy -> PrivacyPage(settings, onClose = { page = Page.Browser })
                 Page.Extensions -> ExtensionsPage(extensions, onClose = { page = Page.Browser })
                 Page.Account -> AccountPage(auth, onClose = { page = Page.Browser })
+                Page.Authenticator -> AuthenticatorPage((ctx.applicationContext as BrowseryApp).otp, onClose = { page = Page.Browser })
             }
         }
         // Dialog izin ekstensi: selalu tersedia agar setiap permintaan dari engine punya jawaban pengguna.

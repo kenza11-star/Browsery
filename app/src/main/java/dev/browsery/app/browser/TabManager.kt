@@ -150,6 +150,15 @@ class TabManager(context: Context, private val db: AppDatabase) {
         return c
     }
 
+    /** Tekanan memori: simpan posisi tab lalu lepaskan sesi Gecko tab latar normal. Tab aktif dan tab privat tetap. */
+    fun trimBackground() {
+        syncRecords()
+        val active = state.activeId
+        for (rec in state.tabs) {
+            if (rec.id != active && !rec.isPrivate) controllers.remove(rec.id)?.close()
+        }
+    }
+
     /** Melepas session tab normal terlama di latar belakang bila melebihi batas. Tab privat tidak dilepas. */
     private fun enforceLimit(keep: String) {
         while (controllers.size > maxLoaded) {
