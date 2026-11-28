@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_authenticator">Authenticator</string>
+    <string name="otp_title">Authenticator</string>
+    <string name="otp_intro">Kode 2FA dibuat di perangkat ini dari kunci rahasia. Tanpa server, tanpa sinkronisasi, dan tidak ikut backup. Kunci dienkripsi dengan Android Keystore. Layar ini tidak bisa di-screenshot.</string>
+    <string name="otp_add">Tambah akun</string>
+    <string name="otp_empty">Belum ada akun. Ketuk Tambah akun lalu masukkan kunci rahasia dari situs (atau tempel tautan otpauth://).</string>
+    <string name="otp_copied">Kode disalin</string>
+    <string name="otp_tap_copy">Ketuk untuk menyalin</string>
+    <string name="otp_edit">Ubah nama</string>
+    <string name="otp_delete">Hapus</string>
+    <string name="otp_delete_confirm">Hapus %1$s? Anda tidak akan bisa membuat kodenya lagi kecuali punya kunci cadangan dari situs.</string>
+    <string name="otp_dialog_add">Tambah akun</string>
+    <string name="otp_secret_label">Kunci rahasia atau tautan otpauth://</string>
+    <string name="otp_issuer_label">Penerbit (mis. Google)</string>
+    <string name="otp_account_label">Akun (mis. email)</string>
+    <string name="otp_digits">Jumlah digit</string>
+    <string name="otp_algorithm">Algoritma</string>
+    <string name="otp_invalid_secret">Kunci tidak valid. Gunakan kunci Base32 (huruf A-Z dan angka 2-7) minimal 16 karakter, atau tautan otpauth://totp/.</string>
+    <string name="otp_duplicate">Akun ini sudah ada atau tidak dapat disimpan.</string>
+    <string name="otp_save">Simpan</string>
+    <string name="otp_notes">Kode bergantung pada jam perangkat; pastikan waktu otomatis aktif. Pindai QR belum tersedia: salin kunci rahasia atau tautan otpauth:// dari situs. Simpan kunci cadangan dari situs; menghapus data aplikasi menghapus akun di sini.</string>
+    <string name="otp_seconds">%1$d detik tersisa</string>
+</resources>
