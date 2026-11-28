@@ -65,6 +65,13 @@ object ThumbnailStore {
         return (0xFF shl 24) or ((r / n).toInt() shl 16) or ((g / n).toInt() shl 8) or (bl / n).toInt()
     }
 
+    /** Lepas referensi gambar mini (tanpa recycle: mungkin masih tergambar) saat memori sistem menipis; dibuat ulang saat dibutuhkan. */
+    fun trim() {
+        map.clear()
+        edges.clear()
+        version++
+    }
+
     /** Ambil gambar mini halaman yang sedang tampil. Aman dipanggil kapan saja; gagal = diabaikan. */
     fun captureActive() {
         val v = viewRef?.get() ?: return

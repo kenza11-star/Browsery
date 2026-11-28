@@ -21,6 +21,7 @@ import dev.browsery.app.auth.SupabaseConfig
 import dev.browsery.app.browser.TabManager
 import dev.browsery.app.data.AppDatabase
 import dev.browsery.app.download.DownloadManager
+import dev.browsery.app.engine.ThumbnailStore
 import dev.browsery.app.extensions.ExtensionManager
 import dev.browsery.app.settings.AppSettings
 import dev.browsery.app.settings.ThemeMode
@@ -76,6 +77,16 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIntent(intent)
+    }
+
+    /**
+     * Tekanan memori dari sistem. 20 = UI tersembunyi: lepas gambar mini. 15 = kritis: lepas sesi Gecko tab latar normal
+     * (dimuat ulang dari URL saat dipilih). Literal dipakai agar tidak bergantung pada konstanta usang.
+     */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= 20) ThumbnailStore.trim()
+        if (level >= 15) tabs.trimBackground()
     }
 
     override fun onDestroy() {

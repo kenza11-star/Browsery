@@ -5,6 +5,7 @@ import dev.browsery.app.auth.AuthManager
 import dev.browsery.app.data.AppDatabase
 import dev.browsery.app.download.DownloadManager
 import dev.browsery.app.extensions.ExtensionManager
+import dev.browsery.app.otp.OtpStore
 import dev.browsery.app.settings.AppSettings
 import dev.browsery.app.sync.SyncManager
 import dev.browsery.app.wallpaper.WallpaperController
@@ -20,6 +21,8 @@ class BrowseryApp : Application() {
     val auth: AuthManager by lazy { AuthManager(this) }
 
     val sync: SyncManager by lazy { SyncManager(this, AppDatabase.get(this), auth) }
+
+    val otp: OtpStore by lazy { OtpStore(this) }
 
     val wallpaper: WallpaperController by lazy { WallpaperController(this) }
 }
