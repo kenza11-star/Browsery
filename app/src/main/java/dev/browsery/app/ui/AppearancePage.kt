@@ -42,6 +42,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +53,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.browsery.app.BrowseryApp
 import dev.browsery.app.R
+import dev.browsery.app.settings.AppSettings
 import dev.browsery.app.wallpaper.Quality
 import kotlin.math.roundToInt
 
@@ -69,7 +72,8 @@ tailrec fun Context.findActivity(): android.app.Activity? = when (this) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AppearancePage(onClose: () -> Unit) {
+fun AppearancePage(settings: AppSettings, onClose: () -> Unit) {
+    val st by settings.state.collectAsState()
     val ctx = LocalContext.current
     val wp = (ctx.applicationContext as BrowseryApp).wallpaper
     val rates = remember { supportedRates(ctx) }
@@ -180,6 +184,15 @@ fun AppearancePage(onClose: () -> Unit) {
                             }
                         }
                         Text(stringResource(R.string.app_refresh_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                Column(Modifier.fillMaxWidth().glassSurface().padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.app_webdark), style = MaterialTheme.typography.titleSmall)
+                            Text(stringResource(R.string.app_webdark_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = st.webDark, onCheckedChange = { v -> settings.update { it.copy(webDark = v) } })
                     }
                 }
                 Text(stringResource(R.string.app_limits), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp))
