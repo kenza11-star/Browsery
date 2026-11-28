@@ -3,6 +3,7 @@ package dev.browsery.app.ui
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -49,6 +50,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -58,6 +61,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -65,6 +69,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -74,6 +79,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import dev.browsery.app.R
 import dev.browsery.app.auth.AuthManager
 import dev.browsery.app.browser.BrowserController
@@ -127,7 +135,27 @@ fun BrowserPage(tabs: TabManager, db: AppDatabase, settings: AppSettings, bottom
     val active = s.active
     val controller = active?.let { tabs.controllerOf(it.id) }
     val st = controller?.state
-    val fullscreen = st?.isFullScreen == true
+    val videoFs = st?.isFullScreen == true
+    var immersive by remember { mutableStateOf(false) }
+    val fullscreen = videoFs || immersive
+    val hostView = LocalView.current
+    // Layar penuh buatan pengguna: sembunyikan bar aplikasi dan bar sistem; geser dari tepi untuk memunculkan bar sistem sementara.
+    LaunchedEffect(immersive) {
+        val w = ctx.findActivity()?.window ?: return@LaunchedEffect
+        val c = WindowCompat.getInsetsController(w, hostView)
+        if (immersive) {
+            c.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            c.hide(WindowInsetsCompat.Type.systemBars())
+        } else if (!videoFs) {
+            c.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            val w = ctx.findActivity()?.window
+            if (w != null) WindowCompat.getInsetsController(w, hostView).show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
     val isHome = controller == null || st?.started != true
     val url = if (isHome) "" else st?.url.orEmpty()
     val fullUrl = if (isHome) "" else st?.displayUrl.orEmpty()
@@ -143,7 +171,13 @@ fun BrowserPage(tabs: TabManager, db: AppDatabase, settings: AppSettings, bottom
     val showSuggestions = focused && !isPrivate && field.text.isNotBlank() && field.text.trim() != fullUrl
 
     BackHandler(enabled = fullscreen || (!isHome && st?.canGoBack == true)) {
-        if (fullscreen) controller?.exitFullScreen() else controller?.goBack()
+        if (immersive) {
+            immersive = false
+        } else if (videoFs) {
+            controller?.exitFullScreen()
+        } else {
+            controller?.goBack()
+        }
     }
 
     val addressRow: @Composable () -> Unit = {
@@ -188,6 +222,7 @@ fun BrowserPage(tabs: TabManager, db: AppDatabase, settings: AppSettings, bottom
                     desktopOn = next
                 }
             },
+            onImmersive = { immersive = true },
             go = go,
         )
         ProgressAndMessage(st, isHome, controller)
@@ -227,6 +262,21 @@ fun BrowserPage(tabs: TabManager, db: AppDatabase, settings: AppSettings, bottom
                     tabCount = tabs.state.tabs.size,
                     onNewTab = { tabs.newTab(isPrivate) },
                     onTabs = { go(Page.Tabs) },
+                )
+            }
+        }
+        if (immersive && !videoFs) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                Text(
+                    text = stringResource(R.string.exit_fullscreen),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White,
+                    modifier = Modifier
+                        .padding(top = 10.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        .clickable { immersive = false }
+                        .padding(horizontal = 14.dp, vertical = 7.dp),
                 )
             }
         }
@@ -384,6 +434,7 @@ private fun AddressRow(
     onSiteInfo: () -> Unit,
     onFind: () -> Unit,
     onDesktop: () -> Unit,
+    onImmersive: () -> Unit,
     go: (Page) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
@@ -442,6 +493,18 @@ private fun AddressRow(
                                 modifier = Modifier.size(18.dp),
                             )
                         }
+                }
+                val blocked = st?.blockedCount ?: 0
+                if (!isHome && blocked > 0) {
+                    val shieldDesc = stringResource(R.string.shield_count_desc, blocked)
+                    Text(
+                        text = "🛡 $blocked",
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier
+                            .clickable(onClick = onSiteInfo)
+                            .semantics { contentDescription = shieldDesc }
+                            .padding(horizontal = 6.dp, vertical = 8.dp),
+                    )
                 }
                 if (isPrivate) {
                     Text(
@@ -545,6 +608,7 @@ private fun AddressRow(
                     null,
                     canBookmark,
                 ) { menu = false; onDesktop() }
+                MenuRow(stringResource(R.string.menu_fullscreen), null) { menu = false; onImmersive() }
                 HorizontalDivider()
                 MenuRow(stringResource(R.string.menu_extensions), null) { menu = false; go(Page.Extensions) }
                 MenuRow(stringResource(R.string.menu_account), Icons.Filled.Person) { menu = false; go(Page.Account) }
